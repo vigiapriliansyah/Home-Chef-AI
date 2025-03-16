@@ -1,8 +1,13 @@
 import Image from "next/image";
+import { AuthStatus } from "@/components/auth/auth-status";
+import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <header className="w-full flex justify-end row-start-1">
+        <AuthStatus />
+      </header>
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <Image
           className="dark:invert"
@@ -12,6 +17,22 @@ export default function Home() {
           height={38}
           priority
         />
+        
+        <div className="flex flex-col gap-4 w-full max-w-md">
+          <Link
+            href="/protected"
+            className="rounded bg-indigo-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-indigo-500"
+          >
+            Visit Protected Page
+          </Link>
+          
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mt-4">
+            <p className="text-sm">
+              <strong>Demo credentials:</strong> user@example.com / password
+            </p>
+          </div>
+        </div>
+        
         <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2 tracking-[-.01em]">
             Get started by editing{" "}
