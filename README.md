@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Home Chef AI - Authentication Setup
+
+This project uses Next.js v15 with the App Router and includes a complete authentication system with NextAuth.js, Prisma, and SQLite.
+
+## Features
+
+- 🔐 Authentication with NextAuth.js
+- 📝 User registration with email/password
+- 🔑 Login with credentials (email/password)
+- 🌐 Social login with Google
+- 🗄️ Database integration with Prisma and SQLite
+- 🔒 Protected routes with middleware
+- 🧩 TypeScript support
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18.17 or later
+- Yarn package manager
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+yarn install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Set up environment variables:
+   - Copy `.env.local.example` to `.env.local`
+   - Generate a secret key: `openssl rand -base64 32`
+   - Add your Google OAuth credentials (Client ID and Client Secret)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+# .env.local
+NEXTAUTH_SECRET=your-generated-secret
+NEXTAUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+DATABASE_URL="file:./dev.db"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Set up the database:
 
-## Learn More
+```bash
+npx prisma migrate dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Start the development server:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+yarn dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Authentication Flow
 
-## Deploy on Vercel
+### Email/Password Registration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. User navigates to `/auth/register`
+2. User fills out the registration form
+3. On submission, the form data is sent to `/api/auth/register`
+4. The password is hashed and the user is created in the database
+5. The user is automatically signed in and redirected to the home page
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Email/Password Login
+
+1. User navigates to `/auth/signin`
+2. User enters their email and password
+3. On submission, NextAuth.js verifies the credentials
+4. If valid, the user is signed in and redirected to the home page
+
+### Google Authentication
+
+1. User clicks "Sign in with Google" on the sign-in or register page
+2. User is redirected to Google's authentication page
+3. After authenticating with Google, the user is redirected back to the application
+4. NextAuth.js creates or updates the user record in the database
+5. The user is signed in and redirected to the home page
+
+## Project Structure
+
+- `/prisma` - Prisma schema and migrations
+- `/src/app/api/auth` - NextAuth.js API routes
+- `/src/app/auth` - Authentication pages (sign in, register)
+- `/src/components/auth` - Authentication components
+- `/src/lib` - Utility functions and configuration
+
+## Protected Routes
+
+Routes under `/protected` are protected by middleware and require authentication. If a user tries to access a protected route without being authenticated, they will be redirected to the sign-in page.
+
+## Database Schema
+
+The database schema includes the following models:
+
+- `User` - User information
+- `Account` - OAuth accounts linked to a user
+- `Session` - User sessions
+- `VerificationToken` - Tokens for email verification
+
+## License
+
+This project is licensed under the MIT License.

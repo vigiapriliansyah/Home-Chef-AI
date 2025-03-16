@@ -1,6 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { JWT } from "next-auth/jwt";
+import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "./prisma";
+import { compare, hash } from "bcrypt";
 
 // Extend the Session type to include user.id
 declare module "next-auth" {
@@ -15,7 +18,19 @@ declare module "next-auth" {
 }
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
+    }),
     CredentialsProvider({
       // The name to display on the sign in form (e.g. "Sign in with...")
       name: "Credentials",
@@ -27,17 +42,35 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         // Add your own logic here to validate credentials
         // This is where you would typically verify against your database
-        // For demo purposes, we'll just check for a demo user
-        if (credentials?.email === "user@example.com" && credentials?.password === "password") {
-          return {
-            id: "1",
-            name: "Demo User",
-            email: "user@example.com",
-          };
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-        
-        // Return null if user data could not be retrieved
-        return null;
+
+        // Check if user exists
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email,
+          },
+        });
+
+        // If no user was found or no password (could be a social login)
+        if (!user || !user.password) {
+          return null;
+        }
+
+        // Check if password matches
+        const passwordMatch = await compare(credentials.password, user.password);
+
+        if (!passwordMatch) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        };
       }
     })
   ],
@@ -58,6 +91,22 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub as string;
       }
       return session;
+    },
+    async jwt({ token, user, account }) {
+      // Persist the user id to the token
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
+    },
+  },
+  events: {
+    async signIn({ user, account, profile }) {
+      // Handle sign-in event, e.g., for Google sign-ins
+      if (account?.provider === 'google' && profile?.email) {
+        // User already exists in the database because of the adapter
+        // We don't need to do anything special here
+      }
     },
   },
 }; 

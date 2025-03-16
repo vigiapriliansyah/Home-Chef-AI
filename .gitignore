@@ -41,3 +41,16 @@ yarn-error.log*
 next-env.d.ts
 
 .vscode
+
+# env files
+.env
+.env.local.example
+
+# prisma
+prisma/dev.db
+prisma/dev.db-journal
+prisma/dev.db-trace.json
+prisma/dev.db-trace.jsonl
+prisma/dev.db-trace.jsonl.gz
+prisma/dev.db-trace.jsonl.gz.part   
+
