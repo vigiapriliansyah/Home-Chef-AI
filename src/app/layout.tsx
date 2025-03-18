@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/auth/session-provider";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
+import { AuthStatus } from "@/components/auth/auth-status";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,11 +27,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <ThemeProvider>
+            <nav className="fixed top-0 right-0 left-0 p-4 bg-white dark:bg-gray-900 shadow-md flex justify-between">
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+                HomeChefAI
+              </h1>
+              <div className="flex items-center gap-4">
+                <AuthStatus />
+                <ThemeSwitcher />
+              </div>
+            </nav>
+            <main className="pt-16">{children}</main>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );
