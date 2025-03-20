@@ -1,18 +1,3 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -20,7 +5,7 @@ import { SessionProvider } from "@/components/auth/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { AuthStatus } from "@/components/auth/auth-status";
-import { SiteHeader } from "@/components/site-header";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -48,13 +33,16 @@ export default function RootLayout({
       >
         <SessionProvider>
           <ThemeProvider>
-            <SidebarProvider>
-              <AppSidebar />
-              <SidebarInset>
-                <SiteHeader />
-                {children}
-              </SidebarInset>
-            </SidebarProvider>
+            <nav className="fixed top-0 right-0 left-0 py-3 px-6 bg-white dark:bg-gray-900 shadow-md flex justify-between items-center">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                HomeChefAI
+              </h1>
+              <div className="flex items-center gap-4">
+                <AuthStatus />
+                <ThemeSwitcher />
+              </div>
+            </nav>
+            <main className="mt-20">{children}</main>
           </ThemeProvider>
         </SessionProvider>
       </body>
