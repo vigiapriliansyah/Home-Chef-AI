@@ -20,6 +20,7 @@ export function SiteHeader() {
         >
           <SidebarIcon />
         </Button>
+        <h2 className="ml-3">HomeChefAI</h2>
       </div>
 
       {/* Spacer to push the ThemeSwitcher to the right */}

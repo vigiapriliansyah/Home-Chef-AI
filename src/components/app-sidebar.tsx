@@ -33,7 +33,7 @@ const data = {
       ],
     },
     {
-      title: "Building Your Application",
+      title: "Today",
       url: "#",
       items: [
         {
@@ -49,46 +49,10 @@ const data = {
           title: "Rendering",
           url: "#",
         },
-        {
-          title: "Caching",
-          url: "#",
-        },
-        {
-          title: "Styling",
-          url: "#",
-        },
-        {
-          title: "Optimizing",
-          url: "#",
-        },
-        {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
-          url: "#",
-        },
       ],
     },
     {
-      title: "API Reference",
+      title: "Yesterday",
       url: "#",
       items: [
         {
@@ -99,46 +63,14 @@ const data = {
           title: "File Conventions",
           url: "#",
         },
-        {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
-          url: "#",
-        },
       ],
     },
     {
-      title: "Architecture",
+      title: "7 days ago",
       url: "#",
       items: [
         {
           title: "Accessibility",
-          url: "#",
-        },
-        {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
           url: "#",
         },
       ],
@@ -150,7 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <SearchForm />
+        
       </SidebarHeader>
       <SidebarContent>
         {/* We create a SidebarGroup for each parent. */}

@@ -76,7 +76,7 @@ const chatBubbleMessageVariants = cva("p-4", {
   variants: {
     variant: {
       received:
-        "bg-secondary text-secondary-foreground rounded-r-lg rounded-tl-lg",
+        "bg-[#fdddbd] text-black rounded-r-lg rounded-tl-lg",
       sent: "bg-primary text-primary-foreground rounded-l-lg rounded-tr-lg",
     },
     layout: {
@@ -89,6 +89,7 @@ const chatBubbleMessageVariants = cva("p-4", {
     layout: "default",
   },
 });
+
 
 interface ChatBubbleMessageProps
   extends React.HTMLAttributes<HTMLDivElement>,

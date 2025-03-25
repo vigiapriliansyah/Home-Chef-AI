@@ -1,7 +1,7 @@
-"use client"; // Tambahkan ini di bagian paling atas
+"use client";
 
 import { KeyboardEvent, useState } from "react";
-import { CornerDownLeft, Mic, Paperclip, Send } from "lucide-react";
+import { CornerDownLeft } from "lucide-react";
 import {
   ChatBubble,
   ChatBubbleAvatar,
@@ -18,22 +18,23 @@ const ChatPage = () => {
   const [message, setMessage] = useState("");
 
   const handleSendMessage = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    e.preventDefault(); 
-    if (!message.trim()) return; 
-
-    setMessage(message); 
-
-    setMessage("");
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend(message);
+    }
   };
 
   const handleSend = (messageContent: string) => {
+    if (!messageContent.trim()) return;
+
     const newMessage = {
       id: messages.length + 1,
       sender: "User",
       content: messageContent,
     };
-    setMessages([...messages, newMessage]);
 
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    setMessage(""); // Reset input setelah pesan dikirim
   };
 
   return (
@@ -49,20 +50,18 @@ const ChatPage = () => {
         </ChatMessageList>
       </main>
       <footer className="sticky bottom-0 left-0 w-full p-4 border-t bg-background">
-        <form className="relative flex items-center w-full rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1">
+        <form
+          className="relative flex items-center w-full rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1"
+          onSubmit={(e) => e.preventDefault()}
+        >
           <ChatInput
             placeholder="Type your message here..."
             className="w-full min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault(); 
-                handleSendMessage(e); 
-              }
-            }}
+            onKeyDown={handleSendMessage}
           />
-          <Button size="sm" className="ml-2">
+          <Button size="sm" className="ml-2" onClick={() => handleSend(message)}>
             Send <CornerDownLeft className="size-3.5" />
           </Button>
         </form>
