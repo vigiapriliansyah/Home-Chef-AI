@@ -45,15 +45,17 @@ const ChatPage = () => {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.sender === "User" ? "justify-end" : "justify-start"}`}
+              className={`flex ${
+                msg.sender === "User" ? "justify-end" : "justify-start"
+              }`}
             >
               <ChatBubble isUser={msg.sender === "User"}>
-                {msg.sender !== "User" && <ChatBubbleAvatar />} {/* Avatar untuk AI */}
+                {msg.sender !== "User"}
                 <ChatBubbleMessage
                   variant={msg.sender === "User" ? "sent" : "received"}
                   className={
                     msg.sender === "User"
-                      ? "bg-[#f2f2f2] text-black self-end"
+                      ? "dark:bg-[#f2f2f2] text-black self-end bg-gray-400"
                       : "bg-[#f5e1e0] text-gray-800 self-start"
                   }
                 >
@@ -66,18 +68,24 @@ const ChatPage = () => {
       </main>
       <footer className="sticky bottom-0 left-0 w-full p-4 border-t bg-background">
         <form
-          className="relative flex items-center w-full rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1"
+          className="relative flex items-center max-w-5xl mx-auto rounded-2xl bg-gray-300 p-3"
           onSubmit={(e) => e.preventDefault()}
         >
           <ChatInput
             placeholder="Masukkan pesan..."
-            className="w-full min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0"
+            className="w-full min-h-12 resize-none rounded-2xl bg-gray-300 border-0 p-3 text-gray-700 placeholder-gray-500 
+      focus:ring-0 focus:ring-offset-0 focus:outline-none"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleSendMessage}
           />
-          <Button size="sm" className="ml-2" onClick={() => handleSend(message)}>
-            Kirim <CornerDownLeft className="size-3.5" />
+          <Button
+            size="sm"
+            className="absolute right-2 bg-gray-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 
+      hover:bg-gray-600 transition"
+            onClick={() => handleSend(message)}
+          >
+            Kirim <CornerDownLeft className="size-4" />
           </Button>
         </form>
       </footer>

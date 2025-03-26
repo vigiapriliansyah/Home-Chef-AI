@@ -11,8 +11,8 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
       ref={ref}
       name="message"
       className={cn(
-        "w-full px-4 py-3 bg-background text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 rounded-md resize-none",
-        "min-h-16 max-h-[200px] overflow-y-auto", // Batasi tinggi maksimal dan tampilkan scroll jika melebihi batas
+        "w-full px-4 py-3 bg-background text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 rounded-md resize-none ",
+        "min-h-16 max-h-[200px] overflow-y-auto",
         className
       )}
       {...props}
