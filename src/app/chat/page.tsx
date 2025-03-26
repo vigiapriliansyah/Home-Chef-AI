@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 const ChatPage = () => {
   const [messages, setMessages] = useState([
     { id: 1, sender: "AI", content: "Halo! Ada yang bisa saya bantu?" },
+    { id: 2, sender: "AI", content: "Hello World!" },
   ]);
   const [message, setMessage] = useState("");
 
@@ -42,10 +43,24 @@ const ChatPage = () => {
       <main className="flex-grow p-4 flex flex-col justify-end">
         <ChatMessageList className="flex flex-col gap-2">
           {messages.map((msg) => (
-            <ChatBubble key={msg.id} isUser={msg.sender === "User"}>
-              <ChatBubbleAvatar />
-              <ChatBubbleMessage>{msg.content}</ChatBubbleMessage>
-            </ChatBubble>
+            <div
+              key={msg.id}
+              className={`flex ${msg.sender === "User" ? "justify-end" : "justify-start"}`}
+            >
+              <ChatBubble isUser={msg.sender === "User"}>
+                {msg.sender !== "User" && <ChatBubbleAvatar />} {/* Avatar untuk AI */}
+                <ChatBubbleMessage
+                  variant={msg.sender === "User" ? "sent" : "received"}
+                  className={
+                    msg.sender === "User"
+                      ? "bg-[#f2f2f2] text-black self-end"
+                      : "bg-[#f5e1e0] text-gray-800 self-start"
+                  }
+                >
+                  {msg.content}
+                </ChatBubbleMessage>
+              </ChatBubble>
+            </div>
           ))}
         </ChatMessageList>
       </main>
@@ -55,14 +70,14 @@ const ChatPage = () => {
           onSubmit={(e) => e.preventDefault()}
         >
           <ChatInput
-            placeholder="Type your message here..."
+            placeholder="Masukkan pesan..."
             className="w-full min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleSendMessage}
           />
           <Button size="sm" className="ml-2" onClick={() => handleSend(message)}>
-            Send <CornerDownLeft className="size-3.5" />
+            Kirim <CornerDownLeft className="size-3.5" />
           </Button>
         </form>
       </footer>
