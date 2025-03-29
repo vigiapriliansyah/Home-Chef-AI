@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { ArrowLeft, SquarePen } from "lucide-react";
 
 // This is sample data.
 const data = {
@@ -80,33 +81,38 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
-      <SidebarHeader></SidebarHeader>
+      <SidebarHeader className="flex justify-between p-4">
+        <div className="flex gap-2">
+          <button>
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex gap-2 ml-22">
+            <span className="text-lg">Chat Baru</span>
+            <button>
+              <SquarePen className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+        </div>
+      </SidebarHeader>
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={item.isActive}
-                      className={`${
-                        item.isActive
-                          ? "bg-blue-500 text-white font-semibold"
-                          : "hover:dark:bg-gray-700 hover:dark:text-gray-200 hover:bg-gray-300"
-                      } rounded-md px-3 py-2 transition`}
-                    >
-                      <a href={item.url}>{item.title}</a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        <div className="mt-6">
+          <span className="px-4 text-sm font-medium text-gray-500">
+            Hari Ini
+          </span>
+          <SidebarMenu className="mt-2">
+            <SidebarMenuItem>
+              <SidebarMenuButton className="px-4 py-2 w-full text-left">
+                Saya punya ayam, cabai dan....
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
+        <div className="mt-6">
+          <span className="px-4 text-sm font-medium text-gray-500">
+            7 Hari Lalu
+          </span>
+          {/* Add more menu items here if needed */}
+        </div>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
