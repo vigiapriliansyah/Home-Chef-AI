@@ -35,7 +35,7 @@ const ChatPage = () => {
     };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setMessage(""); // Reset input setelah pesan dikirim
+    setMessage(""); 
   };
 
   return (

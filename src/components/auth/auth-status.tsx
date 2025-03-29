@@ -2,7 +2,9 @@
 
 import { signIn, signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-
+import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
+import { DropdownMenuItem } from "../ui/dropdown-menu";
+import { LogOut } from "lucide-react";
 export function AuthStatus() {
   const { data: session, status } = useSession();
   const isLoading = status === "loading";
@@ -14,15 +16,16 @@ export function AuthStatus() {
   if (session) {
     return (
       <div className="flex items-center gap-4">
-        <p>
+        {/* <p>
           Signed in as <span className="font-medium">{session.user.email}</span>
-        </p>
-        <button
+        </p> */}
+        <DropdownMenuItem
           onClick={() => signOut()}
-          className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500"
+          className="rounded py-1.5 text-sm font-medium text-white w-full"
         >
-          Sign out
-        </button>
+          <LogOut />
+          Log Out
+        </DropdownMenuItem>
       </div>
     );
   }
@@ -38,4 +41,4 @@ export function AuthStatus() {
       </Link>
     </div>
   );
-} 
+}
