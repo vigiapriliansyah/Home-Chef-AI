@@ -10,7 +10,7 @@ export function SiteHeader() {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <header className="flex bg-[#0e1627] h-16 dark:border-b-2 border-b-2 border-gray-600 sticky z-50 top-0 shrink-0 items-center gap-2 px-4">
+    <header className="flex dark:bg-[#0e1627] bg-white h-16 dark:border-b-2 border-b-2 border-gray-600 sticky z-50 top-0 shrink-0 items-center gap-2 px-4">
       {/* Left section with menu button */}
       <div className="flex items-center">
         <Button
