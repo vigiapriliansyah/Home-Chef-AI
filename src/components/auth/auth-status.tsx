@@ -21,7 +21,7 @@ export function AuthStatus() {
         </p> */}
         <DropdownMenuItem
           onClick={() => signOut()}
-          className="rounded py-1.5 text-sm font-medium text-white w-full"
+          className="text-sm font-medium text-white hover:bg-gray-400 w-full"
         >
           <LogOut />
           Log Out

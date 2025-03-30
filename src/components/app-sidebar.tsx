@@ -81,7 +81,7 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
-      <SidebarHeader className="flex justify-between p-4">
+      <SidebarHeader className="flex justify-between p-4 border-r border-[#fdddbd]">
         <div className="flex gap-2">
           <button>
             <ArrowLeft className="w-5 h-5" />
@@ -94,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="border-r border-[#fdddbd]">
         <div className="mt-6">
           <span className="px-4 text-sm font-medium text-gray-500">
             Hari Ini
