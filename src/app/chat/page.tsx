@@ -1,7 +1,7 @@
 "use client";
 
-import { KeyboardEvent, useState } from "react";
-import { CornerDownLeft } from "lucide-react";
+import { KeyboardEvent, useState, useEffect } from "react";
+import { CornerDownLeft, X } from "lucide-react";
 import {
   ChatBubble,
   ChatBubbleAvatar,
@@ -11,12 +11,20 @@ import { ChatInput } from "@/components/ui/chat/chat-input";
 import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
 
+interface Message {
+  id: number;
+  sender: "User" | "AI";
+  content: string;
+}
+
 const ChatPage = () => {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     { id: 1, sender: "AI", content: "Halo! Ada yang bisa saya bantu?" },
     { id: 2, sender: "AI", content: "Hello World!" },
   ]);
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const handleSendMessage = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -25,17 +33,123 @@ const ChatPage = () => {
     }
   };
 
-  const handleSend = (messageContent: string) => {
-    if (!messageContent.trim()) return;
+  const handleCancelGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+      setIsLoading(false);
+    }
+  };
 
-    const newMessage = {
-      id: messages.length + 1,
-      sender: "User",
+  const handleSend = async (messageContent: string) => {
+    if (!messageContent.trim() || isLoading) return;
+
+    const userMessage = {
+      id: Date.now(), // Using timestamp for unique ID
+      sender: "User" as const,
       content: messageContent,
     };
 
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setMessage(""); 
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setMessage("");
+    setIsLoading(true);
+
+    // Create a new AbortController for this request
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    try {
+      // Create a temporary message for the AI response that will be updated
+      const tempAiMessageId = Date.now() + 1; // Ensure unique ID with timestamp + 1
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { id: tempAiMessageId, sender: "AI", content: "" },
+      ]);
+
+      // Call the API with streaming response
+      const response = await fetch("http://localhost:8000/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: messageContent,
+          max_tokens: 512,
+          temperature: 0.7,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      // Handle the streaming response
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("Response body is not readable");
+
+      let accumulatedText = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        // Convert the chunk to text
+        const chunk = new TextDecoder().decode(value);
+        
+        // Parse the SSE format (data: {...})
+        const lines = chunk.split("\n\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const jsonStr = line.substring(6); // Remove "data: " prefix
+              const data = JSON.parse(jsonStr);
+              
+              if (data.text) {
+                accumulatedText += data.text;
+                
+                // Update the AI message with accumulated text
+                setMessages((prevMessages) =>
+                  prevMessages.map((msg) =>
+                    msg.id === tempAiMessageId
+                      ? { ...msg, content: accumulatedText }
+                      : msg
+                  )
+                );
+              }
+            } catch (e) {
+              console.error("Error parsing SSE data:", e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error("Error calling AI API:", error);
+        // Add an error message
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: Date.now() + 2, // Ensure unique ID
+            sender: "AI",
+            content: "Sorry, I encountered an error processing your request.",
+          },
+        ]);
+      } else {
+        // Handle abort case
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: Date.now() + 2, // Ensure unique ID
+            sender: "AI",
+            content: "Generation was cancelled.",
+          },
+        ]);
+      }
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
   };
 
   return (
@@ -49,8 +163,8 @@ const ChatPage = () => {
                 msg.sender === "User" ? "justify-end" : "justify-start"
               }`}
             >
-              <ChatBubble isUser={msg.sender === "User"}>
-                {msg.sender !== "User"}
+              <ChatBubble>
+                {msg.sender !== "User" && <ChatBubbleAvatar src="https://github.com/shadcn.png" />}
                 <ChatBubbleMessage
                   variant={msg.sender === "User" ? "sent" : "received"}
                   className={
@@ -60,6 +174,9 @@ const ChatPage = () => {
                   }
                 >
                   {msg.content}
+                  {msg.sender === "AI" && isLoading && msg.id === messages[messages.length - 1]?.id && (
+                    <span className="inline-block ml-1 animate-pulse">▌</span>
+                  )}
                 </ChatBubbleMessage>
               </ChatBubble>
             </div>
@@ -78,15 +195,28 @@ const ChatPage = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleSendMessage}
+            disabled={isLoading}
           />
-          <Button
-            size="sm"
-            className="absolute right-2 bg-gray-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 
+          {isLoading ? (
+            <Button
+              size="sm"
+              className="absolute right-2 bg-red-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 
+      hover:bg-red-600 transition"
+              onClick={handleCancelGeneration}
+            >
+              Cancel <X className="size-4" />
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="absolute right-2 bg-gray-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 
       hover:bg-gray-600 transition"
-            onClick={() => handleSend(message)}
-          >
-            Kirim <CornerDownLeft className="size-4" />
-          </Button>
+              onClick={() => handleSend(message)}
+              disabled={isLoading}
+            >
+              Kirim <CornerDownLeft className="size-4" />
+            </Button>
+          )}
         </form>
       </footer>
     </div>
