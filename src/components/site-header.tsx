@@ -2,7 +2,6 @@
 import { SidebarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import { ThemeSwitcher } from "./ui/theme-switcher";
 import { AuthStatus } from "./auth/auth-status";
 import { UserDropdown } from "./user-dropdown";
 
@@ -21,13 +20,17 @@ export function SiteHeader() {
         >
           <SidebarIcon />
         </Button>
+        <img
+          src="logo.jpg"
+          alt="HomeChefAI Logo"
+          className="w-10 h-10 ml-3 rounded-full"
+        />
         <h2 className="ml-3">HomeChefAI</h2>
       </div>
 
       {/* Spacer to push the ThemeSwitcher to the right */}
       <div className="flex-grow"></div>
       <UserDropdown />
-      <ThemeSwitcher />
     </header>
   );
 }

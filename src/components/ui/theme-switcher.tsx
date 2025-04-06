@@ -2,9 +2,10 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { Switch } from "@/components/ui/switch";
 
-export function ThemeSwitcher() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+export function ThemeSwitcherSwitch() {
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -14,11 +15,9 @@ export function ThemeSwitcher() {
   if (!mounted) return null;
 
   return (
-    <button
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full"
-    >
-      {resolvedTheme === "dark" ? "🌙" : "☀️"}
-    </button>
+    <Switch
+      checked={resolvedTheme === "dark"}
+      onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+    />
   );
 }
