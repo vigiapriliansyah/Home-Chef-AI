@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Moon, Settings, Trash2 } from "lucide-react";
+import { History, LogOut, Moon, Settings, Trash2 } from "lucide-react";
 import { ThemeSwitcherSwitch } from "@/components/ui/theme-switcher";
 import Image from "next/image";
 import { AuthStatus } from "./auth/auth-status";
@@ -22,7 +22,7 @@ export default function SettingSidebar() {
           </div>
           <div className="text-center">
             <div className="text-lg font-semibold text-foreground">
-              Home Chef Susi
+              Username
             </div>
             <div className="text-sm text-muted-foreground">
               homechef@fusi.com
@@ -45,9 +45,9 @@ export default function SettingSidebar() {
             <ThemeSwitcherSwitch />
           </div>
 
-          <div className="flex items-center gap-2 text-red-500 hover:text-red-400 cursor-pointer">
-            <Trash2 size={16} />
-            <span>Delete All Chefs</span>
+          <div className="flex items-center gap-2 cursor-pointer">
+            <History size={16} />
+            <span>Chat History</span>
           </div>
         </div>
       </div>
