@@ -24,7 +24,8 @@ const ChatPage = () => {
   ]);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
 
   const handleSendMessage = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -89,14 +90,14 @@ const ChatPage = () => {
       if (!reader) throw new Error("Response body is not readable");
 
       let accumulatedText = "";
-      
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         // Convert the chunk to text
         const chunk = new TextDecoder().decode(value);
-        
+
         // Parse the SSE format (data: {...})
         const lines = chunk.split("\n\n");
         for (const line of lines) {
@@ -104,10 +105,10 @@ const ChatPage = () => {
             try {
               const jsonStr = line.substring(6); // Remove "data: " prefix
               const data = JSON.parse(jsonStr);
-              
+
               if (data.text) {
                 accumulatedText += data.text;
-                
+
                 // Update the AI message with accumulated text
                 setMessages((prevMessages) =>
                   prevMessages.map((msg) =>
@@ -124,7 +125,7 @@ const ChatPage = () => {
         }
       }
     } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
+      if (error instanceof Error && error.name !== "AbortError") {
         console.error("Error calling AI API:", error);
         // Add an error message
         setMessages((prevMessages) => [
@@ -154,8 +155,9 @@ const ChatPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <main className="flex-grow p-4 flex flex-col justify-end">
-        <ChatMessageList className="flex flex-col gap-2">
+    <main className="main-bg relative flex-grow p-4 flex flex-col justify-end overflow-hidden">
+
+        <ChatMessageList className="flex flex-col gap-2 relative z-10">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -164,7 +166,6 @@ const ChatPage = () => {
               }`}
             >
               <ChatBubble>
-                {msg.sender !== "User" && <ChatBubbleAvatar src="https://github.com/shadcn.png" />}
                 <ChatBubbleMessage
                   variant={msg.sender === "User" ? "sent" : "received"}
                   className={
@@ -174,9 +175,11 @@ const ChatPage = () => {
                   }
                 >
                   {msg.content}
-                  {msg.sender === "AI" && isLoading && msg.id === messages[messages.length - 1]?.id && (
-                    <span className="inline-block ml-1 animate-pulse">▌</span>
-                  )}
+                  {msg.sender === "AI" &&
+                    isLoading &&
+                    msg.id === messages[messages.length - 1]?.id && (
+                      <span className="inline-block ml-1 animate-pulse">▌</span>
+                    )}
                 </ChatBubbleMessage>
               </ChatBubble>
             </div>

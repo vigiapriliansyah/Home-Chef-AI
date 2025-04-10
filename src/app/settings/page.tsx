@@ -3,14 +3,24 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Eye, Mail, Phone, Calendar, User, KeyRound } from "lucide-react";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
+
   return (
-    <div className="max-w-2xl px-4 sm:px-6 md:px-8 mx-auto bg-white dark:bg-[#0f172a] p-8 rounded-2xl shadow-lg text-foreground">
+    <div className="max-w-2xl px-4 sm:px-6 md:px-8 mx-auto text-foreground">
       {/* Avatar + Title */}
       <div className="flex flex-col items-center mb-6">
         <div className="w-28 h-28 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-4xl font-bold shadow-md">
-          👤
+          <Image
+            src={session?.user?.image || "/profile.png"}
+            alt="profile"
+            width={110}
+            height={100}
+            className="rounded-full"
+          />
         </div>
         <h1 className="text-2xl font-bold text-pink-500 dark:text-pink-300 mt-4">
           Personal Info
@@ -28,8 +38,9 @@ export default function SettingsPage() {
             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="name"
-              defaultValue="Susi Susanti"
+              defaultValue={session?.user?.name}
               className="pl-9 dark:bg-[#1e293b]"
+              disabled
             />
           </div>
         </div>
@@ -68,7 +79,7 @@ export default function SettingsPage() {
             <Input
               id="email"
               type="email"
-              defaultValue="hello@homechefsusi.com"
+              defaultValue={session?.user?.email}
               className="pl-9 dark:bg-[#1e293b]"
               disabled
             />
