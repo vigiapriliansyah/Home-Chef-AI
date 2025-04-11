@@ -14,6 +14,7 @@ import { History, LogOut, Moon, Settings } from "lucide-react";
 import { AuthStatus } from "./auth/auth-status";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 export default function SettingSidebar() {
   const { data: session } = useSession();
@@ -45,10 +46,12 @@ export default function SettingSidebar() {
       <SidebarContent className="border-r border-[#fdddbd] py-6">
         <SidebarMenu className="space-y-4 px-4">
           <SidebarMenuItem>
-            <SidebarMenuButton className="flex items-center gap-2 w-full text-left hover:text-pink-500 dark:hover:text-gray-800">
-              <Settings size={16} />
-              <span>Personal Info</span>
-            </SidebarMenuButton>
+            <Link href="/settings" passHref>
+              <SidebarMenuButton className="flex items-center gap-2 w-full text-left hover:text-pink-500 dark:hover:text-gray-800">
+                <Settings size={16} />
+                <span>Personal Info</span>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
@@ -62,10 +65,12 @@ export default function SettingSidebar() {
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <SidebarMenuButton className="flex items-center gap-2 w-full text-left hover:text-pink-500 dark:hover:text-gray-800">
-              <History size={16} />
-              <span>Chat History</span>
-            </SidebarMenuButton>
+            <Link href="/settings/history" passHref>
+              <SidebarMenuButton className="flex items-center gap-2 w-full text-left hover:text-pink-500 dark:hover:text-gray-800">
+                <History size={16} />
+                <span>Chat History</span>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
@@ -73,7 +78,6 @@ export default function SettingSidebar() {
       {/* Auth / Logout */}
       <div className="px-4 pb-6 border-t border-border mt-auto">
         <div className="text-sm text-red-500 hover:text-red-400 cursor-pointer flex items-center gap-2 pt-4">
-    
           <AuthStatus />
         </div>
       </div>

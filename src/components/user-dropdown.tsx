@@ -6,8 +6,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AuthStatus } from "@/components/auth/auth-status";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, Moon } from "lucide-react";
 import Link from "next/link";
+import { ThemeSwitcherSwitch } from "@/components/ui/theme-switcher"; // pastikan path-nya sesuai
 
 export function UserDropdown() {
   return (
@@ -20,6 +21,7 @@ export function UserDropdown() {
           <User className="w-6 h-6 " />
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent
         align="end"
         className="w-56 dark:bg-[#2b2b2b] text-white border border-[#3a3a3a] rounded-lg shadow-lg"
@@ -30,6 +32,16 @@ export function UserDropdown() {
             <span>Settings</span>
           </DropdownMenuItem>
         </Link>
+
+        {/* Dark Mode Toggle */}
+        <DropdownMenuItem className="flex items-center justify-between gap-2 dark:text-white text-black hover:bg-[#3a3a3a] px-2 py-2">
+          <div className="flex items-center gap-2">
+            <Moon className="w-5 h-5" />
+            <span>Dark Mode</span>
+          </div>
+          <ThemeSwitcherSwitch />
+        </DropdownMenuItem>
+
         <DropdownMenuItem className="flex items-center gap-2 text-white">
           <AuthStatus />
         </DropdownMenuItem>
