@@ -10,6 +10,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import "../globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export default function ChatLayout({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
@@ -27,6 +28,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
   }
 
   return (
+    <ThemeProvider>
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
@@ -34,5 +36,6 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
         {children}
       </SidebarInset>
     </SidebarProvider>
+    </ThemeProvider>
   );
 }

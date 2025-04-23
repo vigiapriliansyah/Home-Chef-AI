@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import LoginDialog from "@/components/login-dialog";
+import RegisterDialog from "@/components/register-dialog";
 
 export default function Home() {
   return (
@@ -24,18 +26,8 @@ export default function Home() {
 
         {/* Tombol kanan */}
         <div className="flex items-center space-x-4">
-          <Link
-            href="/auth/signin"
-            className="bg-[#b58382] text-white hover:bg-[#a87170] rounded-full px-6 py-2 shadow-md"
-          >
-            Log In
-          </Link>
-          <Link
-            href="/auth/register"
-            className="px-4 py-1.5 rounded-full bg-[#f2dcd4] text-black font-bold border border-gray-400 shadow-md hover:bg-[#e5c2b7] transition-all"
-          >
-            Sign Up
-          </Link>
+          <LoginDialog />
+          <RegisterDialog/>
         </div>
       </header>
 

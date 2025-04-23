@@ -15,14 +15,12 @@ export function AuthStatus() {
   if (session) {
     return (
       <button
-      onClick={() =>
-        signOut({ callbackUrl: "/" }) // Redirect to home after sign out
-      }
-      className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400"
-    >
-      <LogOut size={16} />
-      Logout
-    </button>
+        onClick={() => signOut()}
+        className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400"
+      >
+        <LogOut size={16} />
+        Logout
+      </button>
     );
   }
 
