@@ -9,14 +9,13 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col bg-[#0e1627] text-white relative overflow-hidden">
       {/* Header */}
-      <header className="w-full flex items-center justify-between px-6 py-3 shadow-sm">
-        {/* Logo kiri */}
-        <div className="flex items-center space-x-2">
+      <header className="w-full flex items-center justify-between px-4 py-3 sm:px-6">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Image
             src="/logo.jpg"
             alt="Home Chef Logo"
-            width={40}
-            height={40}
+            width={36}
+            height={36}
             className="rounded-full"
           />
           <span className="text-lg font-bold text-white font-serif">
@@ -24,10 +23,9 @@ export default function Home() {
           </span>
         </div>
 
-        {/* Tombol kanan */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <LoginDialog />
-          <RegisterDialog/>
+          <RegisterDialog />
         </div>
       </header>
 
