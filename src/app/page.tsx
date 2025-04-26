@@ -49,8 +49,7 @@ export default function Home() {
 
         {/* Cards */}
         <div className="flex flex-col md:flex-row gap-6 z-10">
-          <Link
-            href="/chat"
+          <div
             className="bg-[#b58382] hover:bg-[#c48888] text-white px-6 py-4 rounded-xl shadow-md w-72 transition"
           >
             <h3 className="font-semibold text-lg mb-1">Mulai Sekarang</h3>
@@ -58,7 +57,7 @@ export default function Home() {
               Halo chef! Buat akun & login untuk mengeksplor fitur dan menemukan
               resep terbaik Anda!
             </p>
-          </Link>
+          </div>
 
           <div className="bg-white text-black px-6 py-4 rounded-xl shadow-md w-72">
             <h3 className="font-semibold text-lg mb-1">Home Chef App</h3>

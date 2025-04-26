@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { AuthStatus } from "./auth/auth-status";
 import { UserDropdown } from "./user-dropdown";
+import { ShareDrawer } from "./share-drawer";
 
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar();
@@ -30,6 +31,9 @@ export function SiteHeader() {
 
       {/* Spacer to push the ThemeSwitcher to the right */}
       <div className="flex-grow"></div>
+
+      <ShareDrawer />
+
       <UserDropdown />
     </header>
   );
