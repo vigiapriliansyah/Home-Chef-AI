@@ -5,11 +5,8 @@ import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
-import "../globals.css";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import "../../globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export default function ChatLayout({ children }: { children: ReactNode }) {
@@ -29,13 +26,13 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
 
   return (
     <ThemeProvider>
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <SiteHeader />
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          {children}
+        </SidebarInset>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

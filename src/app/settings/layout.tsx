@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, SidebarIcon } from "lucide-react";
 import Link from "next/link";
@@ -48,6 +48,21 @@ export default function SettingsLayout({
 // Komponen tombol toggle
 function ToggleSidebarButton() {
   const { toggleSidebar } = useSidebar();
+  const { data: session } = useSession();
+  const [latestChatId, setLatestChatId] = useState("");
+
+  // Get the latest chat ID to navigate back to
+  useEffect(() => {
+    if (session?.user?.email) {
+      const stored = localStorage.getItem(`chats-${session.user.email}`);
+      if (stored) {
+        const chats = JSON.parse(stored);
+        if (chats.length > 0) {
+          setLatestChatId(chats[0].id);
+        }
+      }
+    }
+  }, [session]);
 
   return (
     <div className="flex items-center gap-4 px-4 py-2">
@@ -60,7 +75,7 @@ function ToggleSidebarButton() {
         <SidebarIcon />
       </Button>
 
-      <Link href="/chat">
+      <Link href={latestChatId ? `/chat/${latestChatId}` : "/"}>
         <Button variant="outline" className="flex items-center gap-2 h-8">
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>

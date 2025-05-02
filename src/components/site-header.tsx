@@ -22,7 +22,7 @@ export function SiteHeader() {
           <SidebarIcon />
         </Button>
         <img
-          src="logo.jpg"
+          src="/logo.jpg"
           alt="HomeChefAI Logo"
           className="w-10 h-10 ml-3 rounded-full"
         />

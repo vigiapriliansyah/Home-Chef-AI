@@ -11,6 +11,8 @@ import { ChatInput } from "@/components/ui/chat/chat-input";
 import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
+import { useParams } from "next/navigation";
+import { EditChatTitleDialog } from "@/components/edit-chat-title-dialog";
 
 interface ChatSession {
   id: string;
@@ -30,6 +32,48 @@ const ChatPage = () => {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const { data: session } = useSession();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const params = useParams<{ id: string }>();
+  const [chatTitle, setChatTitle] = useState("Percakapan Baru");
+  
+  // Load chat session from localStorage on component mount
+  useEffect(() => {
+    if (session?.user?.email) {
+      const chatId = params.id;
+      if (chatId) {
+        const storedChats = localStorage.getItem(`chats-${session.user.email}`);
+        if (storedChats) {
+          const chats: ChatSession[] = JSON.parse(storedChats);
+          const existingChat = chats.find(chat => chat.id === chatId);
+          if (existingChat) {
+            setMessages(existingChat.messages || []);
+            setSessionId(chatId);
+            setChatTitle(existingChat.title);
+          }
+        }
+      }
+    }
+  }, [session, params.id]);
+
+  // Listen for changes to chat title from other components
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (session?.user?.email && sessionId) {
+        const storedChats = localStorage.getItem(`chats-${session.user.email}`);
+        if (storedChats) {
+          const chats: ChatSession[] = JSON.parse(storedChats);
+          const updatedChat = chats.find(chat => chat.id === sessionId);
+          if (updatedChat && updatedChat.title !== chatTitle) {
+            setChatTitle(updatedChat.title);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [session, sessionId, chatTitle]);
 
   useEffect(() => {
     if (!sessionId && messages.length >= 2 && session?.user?.email) {
@@ -45,6 +89,17 @@ const ChatPage = () => {
     }
   }, [messages, session, sessionId]);
   
+  // Update chat in localStorage when messages change
+  useEffect(() => {
+    if (sessionId && session?.user?.email && messages.length > 0) {
+      const chat: ChatSession = {
+        id: sessionId,
+        title: chatTitle,
+        messages,
+      };
+      saveChatToLocalStorage(session.user.email, chat);
+    }
+  }, [messages, sessionId, session, chatTitle]);
 
   const saveChatToLocalStorage = (email: string, chat:ChatSession)=>{
     const key = `chats-${email}`;
@@ -181,8 +236,20 @@ const ChatPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-       <main className="flex-1 overflow-y-auto p-4 bg-background">
-       <ChatMessageList className="flex flex-col gap-2">
+      {sessionId && (
+        <div className="bg-background border-b px-4 py-2 flex justify-between items-center">
+          <h1 className="text-lg font-medium">{chatTitle}</h1>
+          <EditChatTitleDialog 
+            chatId={sessionId} 
+            currentTitle={chatTitle} 
+            onTitleUpdated={() => {
+              // This will be handled by the storage event listener
+            }} 
+          />
+        </div>
+      )}
+      <main className="flex-1 overflow-y-auto p-4 bg-background">
+        <ChatMessageList className="flex flex-col gap-2">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -212,7 +279,7 @@ const ChatPage = () => {
         </ChatMessageList>
       </main>
       <footer className="p-4 border-t bg-background sticky bottom-0">
-      <form
+        <form
           className="relative flex items-center max-w-5xl mx-auto rounded-2xl bg-gray-300 p-3"
           onSubmit={(e) => e.preventDefault()}
         >

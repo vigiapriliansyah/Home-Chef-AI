@@ -60,7 +60,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Chat Models
 model Channel {
   id          String    @id @default(cuid())
   name        String?
