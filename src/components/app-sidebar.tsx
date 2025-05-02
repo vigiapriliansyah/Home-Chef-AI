@@ -45,6 +45,8 @@ interface ChatSession {
   _count?: {
     messages: number;
   };
+  createdAt?: Date; // Add createdAt field to track when the chat was created
+  updatedAt?: Date; // Add updatedAt field to track when the chat was last updated
 }
 
 // This is sample data.
@@ -108,6 +110,41 @@ const data = {
       ],
     },
   ],
+};
+
+// Function to group chats by time periods
+const groupChatsByDate = (chats: ChatSession[]) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const lastWeek = new Date(today);
+  lastWeek.setDate(lastWeek.getDate() - 7);
+  const lastMonth = new Date(today);
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+  return {
+    today: chats.filter(chat => {
+      const chatDate = new Date(chat.createdAt || new Date());
+      return chatDate >= today;
+    }),
+    yesterday: chats.filter(chat => {
+      const chatDate = new Date(chat.createdAt || new Date());
+      return chatDate >= yesterday && chatDate < today;
+    }),
+    lastWeek: chats.filter(chat => {
+      const chatDate = new Date(chat.createdAt || new Date());
+      return chatDate >= lastWeek && chatDate < yesterday;
+    }),
+    lastMonth: chats.filter(chat => {
+      const chatDate = new Date(chat.createdAt || new Date());
+      return chatDate >= lastMonth && chatDate < lastWeek;
+    }),
+    older: chats.filter(chat => {
+      const chatDate = new Date(chat.createdAt || new Date());
+      return chatDate < lastMonth;
+    })
+  };
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -246,6 +283,66 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
+  // Group chats by date
+  const groupedChats = groupChatsByDate(chats);
+
+  // Helper function to render chat items
+  const renderChatItems = (chatsList: ChatSession[]) => {
+    if (chatsList.length === 0) return null;
+    
+    return (
+      <SidebarMenu className="mt-2">
+        {chatsList.map((chat) => (
+          <SidebarMenuItem
+            key={chat.id}
+            className="flex justify-between items-center"
+          >
+            <Link
+              href={`/chat/${chat.id}`}
+              className="px-4 py-2 flex-grow text-left block"
+            >
+              {chat.name && chat.name.length > 30
+                ? chat.name.slice(0, 27) + "..."
+                : chat.name || "Percakapan Baru"}
+            </Link>
+            <div className="flex items-center px-2">
+              <EditChatTitleDialog
+                chatId={chat.id}
+                currentTitle={chat.name || ""}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/chat/${chat.id}`)}
+                  >
+                    Open
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600"
+                    onClick={() => deleteChat(chat.id)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+    );
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarHeader className="flex justify-between p-4 border-r border-[#fdddbd]">
@@ -307,76 +404,67 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         )}
       </SidebarHeader>
       <SidebarContent className="border-r border-[#fdddbd]">
-        <div className="mt-6">
-          <span className="px-4 text-sm font-medium text-gray-500">
-            Hari Ini
-          </span>
-          {isLoading ? (
-            <div className="flex justify-center mt-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#b58382]"></div>
-            </div>
-          ) : chats.length > 0 ? (
-            <SidebarMenu className="mt-2">
-              {chats.map((chat) => (
-                <SidebarMenuItem
-                  key={chat.id}
-                  className="flex justify-between items-center"
-                >
-                  <Link
-                    href={`/chat/${chat.id}`}
-                    className="px-4 py-2 flex-grow text-left block"
-                  >
-                    {chat.name && chat.name.length > 30
-                      ? chat.name.slice(0, 27) + "..."
-                      : chat.name || "Percakapan Baru"}
-                  </Link>
-                  <div className="flex items-center px-2">
-                    <EditChatTitleDialog
-                      chatId={chat.id}
-                      currentTitle={chat.name || ""}
-                    />
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => router.push(`/chat/${chat.id}`)}
-                        >
-                          Open
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600 focus:text-red-600"
-                          onClick={() => deleteChat(chat.id)}
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? "Deleting..." : "Delete"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          ) : (
-            <div className="px-4 py-2 text-sm text-gray-500">
-              No chats yet. Create a new one!
-            </div>
-          )}
-        </div>
-        <div className="mt-6">
-          <span className="px-4 text-sm font-medium text-gray-500">
-            7 Hari Lalu
-          </span>
-          {/* Add more menu items here if needed */}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center mt-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#b58382]"></div>
+          </div>
+        ) : chats.length > 0 ? (
+          <>
+            {/* Today's chats */}
+            {groupedChats.today.length > 0 && (
+              <div className="mt-6">
+                <span className="px-4 text-sm font-medium text-gray-500">
+                  Hari Ini
+                </span>
+                {renderChatItems(groupedChats.today)}
+              </div>
+            )}
+            
+            {/* Yesterday's chats */}
+            {groupedChats.yesterday.length > 0 && (
+              <div className="mt-6">
+                <span className="px-4 text-sm font-medium text-gray-500">
+                  Kemarin
+                </span>
+                {renderChatItems(groupedChats.yesterday)}
+              </div>
+            )}
+            
+            {/* Last week's chats */}
+            {groupedChats.lastWeek.length > 0 && (
+              <div className="mt-6">
+                <span className="px-4 text-sm font-medium text-gray-500">
+                  7 Hari Lalu
+                </span>
+                {renderChatItems(groupedChats.lastWeek)}
+              </div>
+            )}
+            
+            {/* Last month's chats */}
+            {groupedChats.lastMonth.length > 0 && (
+              <div className="mt-6">
+                <span className="px-4 text-sm font-medium text-gray-500">
+                  30 Hari Lalu
+                </span>
+                {renderChatItems(groupedChats.lastMonth)}
+              </div>
+            )}
+            
+            {/* Older chats */}
+            {groupedChats.older.length > 0 && (
+              <div className="mt-6">
+                <span className="px-4 text-sm font-medium text-gray-500">
+                  Lebih Lama
+                </span>
+                {renderChatItems(groupedChats.older)}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="px-4 py-2 text-sm text-gray-500 mt-6">
+            No chats yet. Create a new one!
+          </div>
+        )}
       </SidebarContent>
       <SidebarRail />
     </Sidebar>

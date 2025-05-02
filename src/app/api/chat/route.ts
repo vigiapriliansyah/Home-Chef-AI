@@ -19,7 +19,12 @@ export async function GET(req: NextRequest) {
       where: {
         userId: session.user.id,
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        isShared: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             messages: true
