@@ -12,12 +12,32 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, SquarePen } from "lucide-react";
+import { ArrowLeft, SquarePen, Trash2, MoreVertical, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EditChatTitleDialog } from "./edit-chat-title-dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ChatSession {
   id: string;
@@ -94,6 +114,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
   const router = useRouter();
 
   // Load chats from the database
@@ -162,16 +185,77 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
+  const deleteChat = async (chatId: string) => {
+    if (!session?.user?.id) return;
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/chat/${chatId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete chat");
+      }
+
+      // Remove the chat from state
+      setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatId));
+
+      toast.success("Chat deleted successfully");
+
+      // If user is currently viewing this chat, navigate to main chat page
+      if (window.location.pathname.includes(chatId)) {
+        router.push("/chat");
+      }
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+      toast.error("Failed to delete chat");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const clearAllChats = async () => {
+    if (!session?.user?.id) return;
+
+    setIsClearingAll(true);
+
+    try {
+      const response = await fetch("/api/chat/clear", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to clear all chats");
+      }
+
+      // Clear chats from state
+      setChats([]);
+
+      toast.success("All chats cleared successfully");
+
+      // Navigate to main chat page
+      router.push("/chat");
+    } catch (error) {
+      console.error("Error clearing all chats:", error);
+      toast.error("Failed to clear all chats");
+    } finally {
+      setIsClearingAll(false);
+      setShowClearDialog(false);
+    }
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarHeader className="flex justify-between p-4 border-r border-[#fdddbd]">
         <div className="flex gap-2">
-          <button onClick={() => router.push('/')}>
+          <button onClick={() => router.push("/")}>
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex gap-2 ml-22">
-            <button 
-              className="text-lg flex items-center" 
+            <button
+              className="text-lg flex items-center"
               onClick={createNewChat}
             >
               Chat Baru
@@ -181,6 +265,46 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </button>
           </div>
         </div>
+
+        {/* Clear All Chats Button */}
+        {chats.length > 0 && (
+          <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+            <AlertDialogTrigger asChild>
+              <div className=" flex justify-between items-center">
+                Clear All History
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear All Chats</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all your chats. This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-500 hover:bg-red-600"
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    clearAllChats();
+                  }}
+                  disabled={isClearingAll}
+                >
+                  {isClearingAll ? "Clearing..." : "Clear All"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </SidebarHeader>
       <SidebarContent className="border-r border-[#fdddbd]">
         <div className="mt-6">
@@ -194,7 +318,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ) : chats.length > 0 ? (
             <SidebarMenu className="mt-2">
               {chats.map((chat) => (
-                <SidebarMenuItem key={chat.id} className="flex justify-between items-center">
+                <SidebarMenuItem
+                  key={chat.id}
+                  className="flex justify-between items-center"
+                >
                   <Link
                     href={`/chat/${chat.id}`}
                     className="px-4 py-2 flex-grow text-left block"
@@ -203,11 +330,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       ? chat.name.slice(0, 27) + "..."
                       : chat.name || "Percakapan Baru"}
                   </Link>
-                  <div className="px-2">
+                  <div className="flex items-center px-2">
                     <EditChatTitleDialog
                       chatId={chat.id}
                       currentTitle={chat.name || ""}
                     />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => router.push(`/chat/${chat.id}`)}
+                        >
+                          Open
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600 focus:text-red-600"
+                          onClick={() => deleteChat(chat.id)}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "Deleting..." : "Delete"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </SidebarMenuItem>
               ))}

@@ -32,7 +32,7 @@ export function SiteHeader() {
       {/* Spacer to push the ThemeSwitcher to the right */}
       <div className="flex-grow"></div>
 
-      <ShareDrawer />
+      {/* <ShareDrawer /> */}
 
       <UserDropdown />
     </header>
