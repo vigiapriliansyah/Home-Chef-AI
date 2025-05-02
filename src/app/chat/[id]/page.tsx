@@ -4,109 +4,87 @@ import { KeyboardEvent, useState, useEffect } from "react";
 import { CornerDownLeft, X } from "lucide-react";
 import {
   ChatBubble,
-  ChatBubbleAvatar,
   ChatBubbleMessage,
 } from "@/components/ui/chat/chat-bubble";
 import { ChatInput } from "@/components/ui/chat/chat-input";
 import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { EditChatTitleDialog } from "@/components/edit-chat-title-dialog";
+import { ShareDrawer } from "@/components/share-drawer";
+import { toast } from "sonner";
 
-interface ChatSession {
-  id: string;
-  title: string;
-  messages: Message[]
-}
 interface Message {
-  id: number;
-  sender: "User" | "AI";
+  id: string;
   content: string;
+  role: string;
+  channelId: string;
+  createdAt: string;
+}
+
+interface ChatChannel {
+  id: string;
+  name: string;
+  messages: Message[];
 }
 
 const ChatPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const { data: session } = useSession();
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const params = useParams<{ id: string }>();
+  const params = useParams();
+  const chatId = params?.id as string;
   const [chatTitle, setChatTitle] = useState("Percakapan Baru");
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   
-  // Load chat session from localStorage on component mount
+  // Load chat data from the database
   useEffect(() => {
-    if (session?.user?.email) {
-      const chatId = params.id;
-      if (chatId) {
-        const storedChats = localStorage.getItem(`chats-${session.user.email}`);
-        if (storedChats) {
-          const chats: ChatSession[] = JSON.parse(storedChats);
-          const existingChat = chats.find(chat => chat.id === chatId);
-          if (existingChat) {
-            setMessages(existingChat.messages || []);
-            setSessionId(chatId);
-            setChatTitle(existingChat.title);
+    async function fetchChat() {
+      if (!session?.user?.id || !chatId) return;
+      
+      try {
+        const response = await fetch(`/api/chat/${chatId}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            // Chat not found, navigate to main chat page
+            // router.push("/chat");
+            return;
           }
+          
+          const error = await response.json();
+          throw new Error(error.error || "Failed to fetch chat");
         }
+        
+        const data: ChatChannel = await response.json();
+        
+        setChatTitle(data.name || "Percakapan Baru");
+        setMessages(data.messages || []);
+      } catch (err) {
+        console.error("Error fetching chat:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch chat");
+        toast.error("Failed to load chat");
+      } finally {
+        setIsInitialLoading(false);
       }
     }
-  }, [session, params.id]);
-
-  // Listen for changes to chat title from other components
-  useEffect(() => {
-    const handleStorageChange = () => {
-      if (session?.user?.email && sessionId) {
-        const storedChats = localStorage.getItem(`chats-${session.user.email}`);
-        if (storedChats) {
-          const chats: ChatSession[] = JSON.parse(storedChats);
-          const updatedChat = chats.find(chat => chat.id === sessionId);
-          if (updatedChat && updatedChat.title !== chatTitle) {
-            setChatTitle(updatedChat.title);
-          }
-        }
+    
+    fetchChat();
+    
+    // Polling for new messages (optional)
+    const interval = setInterval(() => {
+      if (session?.user?.id && chatId) {
+        fetchChat();
       }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [session, sessionId, chatTitle]);
-
-  useEffect(() => {
-    if (!sessionId && messages.length >= 2 && session?.user?.email) {
-      const userMessage = messages.find((msg) => msg.sender === "User");
-      const newSessionId = `${Date.now()}`;
-      const newChat: ChatSession = {
-        id: newSessionId,
-        title: userMessage?.content || "Percakapan Baru",
-        messages,
-      };
-      saveChatToLocalStorage(session.user.email, newChat);
-      setSessionId(newSessionId);
-    }
-  }, [messages, session, sessionId]);
-  
-  // Update chat in localStorage when messages change
-  useEffect(() => {
-    if (sessionId && session?.user?.email && messages.length > 0) {
-      const chat: ChatSession = {
-        id: sessionId,
-        title: chatTitle,
-        messages,
-      };
-      saveChatToLocalStorage(session.user.email, chat);
-    }
-  }, [messages, sessionId, session, chatTitle]);
-
-  const saveChatToLocalStorage = (email: string, chat:ChatSession)=>{
-    const key = `chats-${email}`;
-    const existing = JSON.parse(localStorage.getItem(key) || "[]");
-    const updated = [...existing.filter((c: ChatSession) => c.id !== chat.id), chat];
-    localStorage.setItem(key, JSON.stringify(updated));
-  }
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [session, chatId, router]);
 
   const handleSendMessage = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -124,29 +102,36 @@ const ChatPage = () => {
   };
 
   const handleSend = async (messageContent: string) => {
-    if (!messageContent.trim() || isLoading) return;
+    if (!messageContent.trim() || isLoading || !chatId || !session?.user?.id) return;
 
-    const userMessage = {
-      id: Date.now(), // Using timestamp for unique ID
-      sender: "User" as const,
-      content: messageContent,
-    };
-
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
-    setMessage("");
     setIsLoading(true);
 
-    // Create a new AbortController for this request
-    const controller = new AbortController();
-    setAbortController(controller);
-
     try {
-      // Create a temporary message for the AI response that will be updated
-      const tempAiMessageId = Date.now() + 1; // Ensure unique ID with timestamp + 1
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { id: tempAiMessageId, sender: "AI", content: "" },
-      ]);
+      // Save user message to the database
+      const userMessageResponse = await fetch(`/api/chat/${chatId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: messageContent,
+          role: "user",
+        }),
+      });
+
+      if (!userMessageResponse.ok) {
+        throw new Error("Failed to save user message");
+      }
+
+      const userMessage = await userMessageResponse.json();
+      
+      // Update local messages
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+      setMessage("");
+
+      // Create a new AbortController for the AI request
+      const controller = new AbortController();
+      setAbortController(controller);
 
       // Call the API with streaming response
       const response = await fetch("http://localhost:8000/generate", {
@@ -189,15 +174,6 @@ const ChatPage = () => {
 
               if (data.text) {
                 accumulatedText += data.text;
-
-                // Update the AI message with accumulated text
-                setMessages((prevMessages) =>
-                  prevMessages.map((msg) =>
-                    msg.id === tempAiMessageId
-                      ? { ...msg, content: accumulatedText }
-                      : msg
-                  )
-                );
               }
             } catch (e) {
               console.error("Error parsing SSE data:", e);
@@ -205,28 +181,56 @@ const ChatPage = () => {
           }
         }
       }
-    } catch (error) {
-      if (error instanceof Error && error.name !== "AbortError") {
-        console.error("Error calling AI API:", error);
-        // Add an error message
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            id: Date.now() + 2, // Ensure unique ID
-            sender: "AI",
-            content: "Sorry, I encountered an error processing your request.",
+
+      // Save AI response to the database
+      const aiMessageResponse = await fetch(`/api/chat/${chatId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: accumulatedText,
+          role: "assistant",
+        }),
+      });
+
+      if (!aiMessageResponse.ok) {
+        throw new Error("Failed to save AI message");
+      }
+
+      const aiMessage = await aiMessageResponse.json();
+      
+      // Update local messages
+      setMessages((prevMessages) => [...prevMessages, aiMessage]);
+
+      // If this is a new chat with no title, use the first user message as the title
+      if (chatTitle === "Percakapan Baru" && messages.length === 0) {
+        const newTitle = messageContent.length > 30 
+          ? messageContent.slice(0, 27) + "..."
+          : messageContent;
+        
+        // Update chat title in the database
+        await fetch(`/api/chat/${chatId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
           },
-        ]);
+          body: JSON.stringify({
+            name: newTitle,
+          }),
+        });
+        
+        setChatTitle(newTitle);
+      }
+    } catch (error) {
+      console.error("Error in chat flow:", error);
+      
+      if (error instanceof Error && error.name !== "AbortError") {
+        // Add an error message to the UI
+        toast.error("Error: " + (error.message || "Failed to process request"));
       } else {
         // Handle abort case
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            id: Date.now() + 2, // Ensure unique ID
-            sender: "AI",
-            content: "Generation was cancelled.",
-          },
-        ]);
+        toast.info("Generation was cancelled");
       }
     } finally {
       setIsLoading(false);
@@ -234,18 +238,47 @@ const ChatPage = () => {
     }
   };
 
+  if (isInitialLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#b58382]"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen p-4">
+        <h1 className="text-2xl font-bold mb-4">Error Loading Chat</h1>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <Button onClick={() => router.push("/chat")}>
+          Go to Chats
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
-      {sessionId && (
+      {chatId && (
         <div className="bg-background border-b px-4 py-2 flex justify-between items-center">
           <h1 className="text-lg font-medium">{chatTitle}</h1>
-          <EditChatTitleDialog 
-            chatId={sessionId} 
-            currentTitle={chatTitle} 
-            onTitleUpdated={() => {
-              // This will be handled by the storage event listener
-            }} 
-          />
+          <div className="flex items-center">
+            <EditChatTitleDialog 
+              chatId={chatId} 
+              currentTitle={chatTitle} 
+              onTitleUpdated={() => {
+                // Refresh chat data
+                fetch(`/api/chat/${chatId}`)
+                  .then(response => response.json())
+                  .then(data => {
+                    setChatTitle(data.name || "Percakapan Baru");
+                  })
+                  .catch(error => console.error("Error refreshing chat:", error));
+              }} 
+            />
+            <ShareDrawer />
+          </div>
         </div>
       )}
       <main className="flex-1 overflow-y-auto p-4 bg-background">
@@ -254,20 +287,20 @@ const ChatPage = () => {
             <div
               key={msg.id}
               className={`flex ${
-                msg.sender === "User" ? "justify-end" : "justify-start"
+                msg.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
               <ChatBubble>
                 <ChatBubbleMessage
-                  variant={msg.sender === "User" ? "sent" : "received"}
+                  variant={msg.role === "user" ? "sent" : "received"}
                   className={
-                    msg.sender === "User"
+                    msg.role === "user"
                       ? "dark:bg-[#f2f2f2] text-black self-end bg-gray-400"
                       : "bg-[#f5e1e0] text-gray-800 self-start"
                   }
                 >
                   {msg.content}
-                  {msg.sender === "AI" &&
+                  {msg.role === "assistant" &&
                     isLoading &&
                     msg.id === messages[messages.length - 1]?.id && (
                       <span className="inline-block ml-1 animate-pulse">▌</span>

@@ -11,14 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SquarePen } from "lucide-react";
+import { SquarePen, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
-
-interface ChatSession {
-  id: string;
-  title: string;
-  messages: any[];
-}
+import { toast } from "sonner";
 
 interface EditChatTitleDialogProps {
   chatId: string;
@@ -33,31 +28,44 @@ export function EditChatTitleDialog({
 }: EditChatTitleDialogProps) {
   const [title, setTitle] = useState(currentTitle);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { data: session } = useSession();
 
-  const handleSave = () => {
-    if (!session?.user?.email || !title.trim()) return;
+  const handleSave = async () => {
+    if (!session?.user?.id || !title.trim()) return;
 
-    const key = `chats-${session.user.email}`;
-    const existing = JSON.parse(localStorage.getItem(key) || "[]");
-    
-    const updatedChats = existing.map((chat: ChatSession) => {
-      if (chat.id === chatId) {
-        return { ...chat, title: title.trim() };
+    setIsLoading(true);
+
+    try {
+      // Update the chat title in the database
+      const response = await fetch(`/api/chat/${chatId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: title.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update chat title");
       }
-      return chat;
-    });
-    
-    localStorage.setItem(key, JSON.stringify(updatedChats));
-    
-    // Trigger the storage event to update other components
-    window.dispatchEvent(new Event('storage'));
-    
-    if (onTitleUpdated) {
-      onTitleUpdated();
+
+      toast.success("Chat title updated");
+      
+      if (onTitleUpdated) {
+        onTitleUpdated();
+      }
+      
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error updating chat title:", error);
+      toast.error("Failed to update chat title");
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsOpen(false);
   };
 
   return (
@@ -81,10 +89,19 @@ export function EditChatTitleDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save</Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -50,6 +50,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   channels      Channel[]
+  messages      Message[]
 }
 
 model VerificationToken {
@@ -80,5 +81,6 @@ model Message {
   createdAt DateTime @default(now())
   channelId String
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  userId    String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

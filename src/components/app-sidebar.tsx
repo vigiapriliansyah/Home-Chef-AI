@@ -21,8 +21,10 @@ import { EditChatTitleDialog } from "./edit-chat-title-dialog";
 
 interface ChatSession {
   id: string;
-  title: string;
-  messages: any[];
+  name: string; // Changed from 'title' to 'name' to match the database schema
+  _count?: {
+    messages: number;
+  };
 }
 
 // This is sample data.
@@ -91,81 +93,73 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();
   const [chats, setChats] = useState<ChatSession[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Load chats from localStorage
+  // Load chats from the database
   useEffect(() => {
-    const loadChats = () => {
-      if (session?.user?.email) {
-        const stored = localStorage.getItem(`chats-${session.user.email}`);
-        if (stored) {
-          // Parse and sort chats by most recent first
-          const parsedChats = JSON.parse(stored);
-          // Assuming newer chats have larger timestamp IDs
-          const sortedChats = parsedChats.sort((a: ChatSession, b: ChatSession) => {
-            return parseInt(b.id) - parseInt(a.id);
-          });
-          setChats(sortedChats);
-        } else {
-          // If no chats exist, create a new one
-          const newChatId = `${Date.now()}`;
-          const newChat: ChatSession = {
-            id: newChatId,
-            title: "Percakapan Baru",
-            messages: [],
-          };
-      
-          // Add new chat to localStorage
-          const key = `chats-${session.user.email}`;
-          localStorage.setItem(key, JSON.stringify([newChat]));
-          
-          // Update state
-          setChats([newChat]);
-      
-          // Navigate to new chat
-          router.push(`/chat/${newChatId}`);
+    const fetchChats = async () => {
+      if (!session?.user?.id) return;
+
+      try {
+        const response = await fetch("/api/chat");
+        if (!response.ok) {
+          throw new Error("Failed to fetch chats");
         }
+        const data = await response.json();
+        setChats(data);
+      } catch (error) {
+        console.error("Error fetching chats:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadChats();
+    if (session?.user?.id) {
+      fetchChats();
+    } else {
+      setIsLoading(false);
+    }
 
-    // Add event listener to update chats when localStorage changes
-    window.addEventListener('storage', loadChats);
+    // Set up a polling interval to refresh chats (optional)
+    const interval = setInterval(() => {
+      if (session?.user?.id) {
+        fetchChats();
+      }
+    }, 10000); // Poll every 10 seconds
 
-    // Refresh chats every 2 seconds (optional, to keep UI in sync)
-    const interval = setInterval(loadChats, 2000);
+    return () => clearInterval(interval);
+  }, [session]);
 
-    return () => {
-      window.removeEventListener('storage', loadChats);
-      clearInterval(interval);
-    };
-  }, [session, router]);
+  const createNewChat = async () => {
+    if (!session?.user?.id) return;
 
-  const createNewChat = () => {
-    if (!session?.user?.email) return;
+    try {
+      // Create a new chat in the database
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "Percakapan Baru",
+        }),
+      });
 
-    const newChatId = `${Date.now()}`;
-    const newChat: ChatSession = {
-      id: newChatId,
-      title: "Percakapan Baru",
-      messages: [],
-    };
+      if (!response.ok) {
+        throw new Error("Failed to create new chat");
+      }
 
-    // Add new chat to localStorage
-    const key = `chats-${session.user.email}`;
-    const existing = JSON.parse(localStorage.getItem(key) || "[]");
-    const updated = [newChat, ...existing];
-    localStorage.setItem(key, JSON.stringify(updated));
-    
-    // Trigger storage event for other components to update
-    window.dispatchEvent(new Event('storage'));
-    
-    // Update state
-    setChats(updated);
+      const newChat = await response.json();
 
-    // Navigate to new chat
-    router.push(`/chat/${newChatId}`);
+      // Update state
+      setChats((prevChats) => [newChat, ...prevChats]);
+
+      // Navigate to new chat
+      router.push(`/chat/${newChat.id}`);
+    } catch (error) {
+      console.error("Error creating new chat:", error);
+    }
   };
 
   return (
@@ -193,7 +187,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <span className="px-4 text-sm font-medium text-gray-500">
             Hari Ini
           </span>
-          {chats.length > 0 && (
+          {isLoading ? (
+            <div className="flex justify-center mt-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#b58382]"></div>
+            </div>
+          ) : chats.length > 0 ? (
             <SidebarMenu className="mt-2">
               {chats.map((chat) => (
                 <SidebarMenuItem key={chat.id} className="flex justify-between items-center">
@@ -201,19 +199,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     href={`/chat/${chat.id}`}
                     className="px-4 py-2 flex-grow text-left block"
                   >
-                    {chat.title.length > 30
-                      ? chat.title.slice(0, 27) + "..."
-                      : chat.title}
+                    {chat.name && chat.name.length > 30
+                      ? chat.name.slice(0, 27) + "..."
+                      : chat.name || "Percakapan Baru"}
                   </Link>
                   <div className="px-2">
                     <EditChatTitleDialog
                       chatId={chat.id}
-                      currentTitle={chat.title}
+                      currentTitle={chat.name || ""}
                     />
                   </div>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+          ) : (
+            <div className="px-4 py-2 text-sm text-gray-500">
+              No chats yet. Create a new one!
+            </div>
           )}
         </div>
         <div className="mt-6">
