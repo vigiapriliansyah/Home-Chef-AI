@@ -106,6 +106,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             return parseInt(b.id) - parseInt(a.id);
           });
           setChats(sortedChats);
+        } else {
+          // If no chats exist, create a new one
+          const newChatId = `${Date.now()}`;
+          const newChat: ChatSession = {
+            id: newChatId,
+            title: "Percakapan Baru",
+            messages: [],
+          };
+      
+          // Add new chat to localStorage
+          const key = `chats-${session.user.email}`;
+          localStorage.setItem(key, JSON.stringify([newChat]));
+          
+          // Update state
+          setChats([newChat]);
+      
+          // Navigate to new chat
+          router.push(`/chat/${newChatId}`);
         }
       }
     };
@@ -122,7 +140,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       window.removeEventListener('storage', loadChats);
       clearInterval(interval);
     };
-  }, [session]);
+  }, [session, router]);
 
   const createNewChat = () => {
     if (!session?.user?.email) return;

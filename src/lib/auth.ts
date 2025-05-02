@@ -79,7 +79,7 @@ export const authOptions: NextAuthOptions = {
     // signOut: '/auth/signout',
     // error: '/auth/error',
     // verifyRequest: '/auth/verify-request',
-    // newUser: '/auth/new-user'
+    newUser: '/chat', // Redirect new users to chat page
   },
   session: {
     strategy: "jwt",

@@ -34,7 +34,8 @@ export default function SignInForm() {
         return;
       }
 
-      router.push(callbackUrl);
+      // Always redirect to /chat which will handle creating a new chat if needed
+      router.push("/chat");
       router.refresh();
     } catch (error) {
       setError("Something went wrong");
@@ -43,7 +44,7 @@ export default function SignInForm() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl });
+    signIn("google", { callbackUrl: "/chat" });
   };
 
   return (

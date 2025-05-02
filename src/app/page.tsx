@@ -4,8 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 import LoginDialog from "@/components/login-dialog";
 import RegisterDialog from "@/components/register-dialog";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // If user is already authenticated, redirect to chat
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/chat");
+    }
+  }, [status, router]);
+
   return (
     <main className="min-h-screen flex flex-col bg-[#0e1627] text-white relative overflow-hidden">
       {/* Header */}
@@ -24,8 +37,15 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <LoginDialog />
-          <RegisterDialog />
+          {status === "unauthenticated" && (
+            <>
+              <LoginDialog />
+              <RegisterDialog />
+            </>
+          )}
+          {status === "authenticated" && (
+            <p className="text-sm">Redirecting to chat...</p>
+          )}
         </div>
       </header>
 
