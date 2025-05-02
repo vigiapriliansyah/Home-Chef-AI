@@ -14,6 +14,7 @@ import { useParams, useRouter } from "next/navigation";
 import { EditChatTitleDialog } from "@/components/edit-chat-title-dialog";
 import { ShareDrawer } from "@/components/share-drawer";
 import { toast } from "sonner";
+import { fetchEventSource } from "@/lib/utils";
 
 interface Message {
   id: string;
@@ -64,7 +65,26 @@ const ChatPage = () => {
         const data: ChatChannel = await response.json();
         
         setChatTitle(data.name || "Percakapan Baru");
-        setMessages(data.messages || []);
+        
+        // Only update messages if we're not currently in a loading state
+        // This prevents wiping out in-progress streaming messages
+        if (!isLoading) {
+          setMessages((prevMessages) => {
+            // Keep any temporary message that might be currently streaming
+            const tempMessage = prevMessages.find(msg => msg.id.toString().startsWith('temp-'));
+            
+            if (tempMessage) {
+              // Add the temp message to the fetched messages if it doesn't exist there
+              const updatedMessages = [...data.messages];
+              if (!updatedMessages.some(msg => msg.id === tempMessage.id)) {
+                updatedMessages.push(tempMessage);
+              }
+              return updatedMessages;
+            }
+            
+            return data.messages || [];
+          });
+        }
       } catch (err) {
         console.error("Error fetching chat:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch chat");
@@ -78,13 +98,13 @@ const ChatPage = () => {
     
     // Polling for new messages (optional)
     const interval = setInterval(() => {
-      if (session?.user?.id && chatId) {
+      if (session?.user?.id && chatId && !isLoading) {
         fetchChat();
       }
     }, 10000);
     
     return () => clearInterval(interval);
-  }, [session, chatId, router]);
+  }, [session, chatId, router, isLoading]);
 
   const handleSendMessage = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -98,6 +118,11 @@ const ChatPage = () => {
       abortController.abort();
       setAbortController(null);
       setIsLoading(false);
+      
+      // Remove any temporary message
+      setMessages((prevMessages) => 
+        prevMessages.filter((msg) => !msg.id.toString().startsWith('temp-'))
+      );
     }
   };
 
@@ -133,94 +158,149 @@ const ChatPage = () => {
       const controller = new AbortController();
       setAbortController(controller);
 
-      // Call the API with streaming response
-      const response = await fetch("http://localhost:8000/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: messageContent,
-          max_tokens: 512,
-          temperature: 0.7,
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-
-      // Handle the streaming response
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("Response body is not readable");
-
+      // Create a temporary AI message object with an optimistic ID
+      const tempMessageId = `temp-${Date.now()}`;
+      const tempAiMessage: Message = {
+        id: tempMessageId,
+        content: "",
+        role: "assistant",
+        channelId: chatId,
+        createdAt: new Date().toISOString(),
+      };
+      
+      // Add the temporary message to the state
+      setMessages((prevMessages) => [...prevMessages, tempAiMessage]);
+      
       let accumulatedText = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        // Convert the chunk to text
-        const chunk = new TextDecoder().decode(value);
-
-        // Parse the SSE format (data: {...})
-        const lines = chunk.split("\n\n");
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const jsonStr = line.substring(6); // Remove "data: " prefix
-              const data = JSON.parse(jsonStr);
-
-              if (data.text) {
-                accumulatedText += data.text;
-              }
-            } catch (e) {
-              console.error("Error parsing SSE data:", e);
-            }
-          }
-        }
-      }
-
-      // Save AI response to the database
-      const aiMessageResponse = await fetch(`/api/chat/${chatId}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: accumulatedText,
-          role: "assistant",
-        }),
-      });
-
-      if (!aiMessageResponse.ok) {
-        throw new Error("Failed to save AI message");
-      }
-
-      const aiMessage = await aiMessageResponse.json();
-      
-      // Update local messages
-      setMessages((prevMessages) => [...prevMessages, aiMessage]);
-
-      // If this is a new chat with no title, use the first user message as the title
-      if (chatTitle === "Percakapan Baru" && messages.length === 0) {
-        const newTitle = messageContent.length > 30 
-          ? messageContent.slice(0, 27) + "..."
-          : messageContent;
-        
-        // Update chat title in the database
-        await fetch(`/api/chat/${chatId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
+      try {
+        // Use the fetchEventSource utility to handle the streaming response
+        await fetchEventSource("http://localhost:8000/generate", {
+          body: {
+            prompt: messageContent,
+            max_tokens: 512,
+            temperature: 0.7,
           },
-          body: JSON.stringify({
-            name: newTitle,
-          }),
+          onChunk: (chunk) => {
+            if (chunk) {
+              // Append the new chunk to the accumulated text
+              accumulatedText += chunk;
+              
+              // Update the temporary message with the accumulated text
+              setMessages((prevMessages) => 
+                prevMessages.map((msg) => 
+                  msg.id === tempMessageId 
+                    ? { ...msg, content: accumulatedText }
+                    : msg
+                )
+              );
+            }
+          },
+          onDone: async () => {
+            try {
+              if (accumulatedText.trim()) {
+                // Save the complete AI response to the database
+                const aiMessageResponse = await fetch(`/api/chat/${chatId}/messages`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    content: accumulatedText,
+                    role: "assistant",
+                  }),
+                });
+
+                if (!aiMessageResponse.ok) {
+                  throw new Error("Failed to save AI message");
+                }
+
+                const aiMessage = await aiMessageResponse.json();
+                
+                // Replace the temporary message with the saved one
+                setMessages((prevMessages) => 
+                  prevMessages.map((msg) => 
+                    msg.id === tempMessageId ? aiMessage : msg
+                  )
+                );
+
+                // If this is a new chat with no title, use the first user message as the title
+                if (chatTitle === "Percakapan Baru" && messages.length === 1) {
+                  const newTitle = messageContent.length > 30 
+                    ? messageContent.slice(0, 27) + "..."
+                    : messageContent;
+                  
+                  // Update chat title in the database
+                  await fetch(`/api/chat/${chatId}`, {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      name: newTitle,
+                    }),
+                  });
+                  
+                  setChatTitle(newTitle);
+                }
+              } else {
+                // If no text was generated, remove the temporary message
+                setMessages((prevMessages) => 
+                  prevMessages.filter((msg) => msg.id !== tempMessageId)
+                );
+                toast.error("No response was generated. Please try again.");
+              }
+            } catch (error) {
+              console.error("Error saving AI message:", error);
+              toast.error("Failed to save AI response");
+              
+              // Keep the temporary message with its content if saving failed
+              // This way the user doesn't lose the AI's response
+            } finally {
+              setIsLoading(false);
+              setAbortController(null);
+            }
+          },
+          onError: (error) => {
+            console.error("Error in streaming response:", error);
+            
+            if (error.name !== "AbortError") {
+              // Add an error message to the UI
+              toast.error("Error: " + (error.message || "Failed to process request"));
+              
+              // Keep the temporary message if it has content
+              setMessages((prevMessages) => {
+                const tempMsg = prevMessages.find(msg => msg.id === tempMessageId);
+                if (tempMsg && tempMsg.content.trim()) {
+                  return prevMessages;
+                }
+                return prevMessages.filter((msg) => msg.id !== tempMessageId);
+              });
+            } else {
+              // Handle abort case
+              toast.info("Generation was cancelled");
+              
+              // Remove the temporary message if cancelled
+              setMessages((prevMessages) => 
+                prevMessages.filter((msg) => msg.id !== tempMessageId)
+              );
+            }
+            
+            setIsLoading(false);
+            setAbortController(null);
+          }
         });
+      } catch (error) {
+        console.error("Error in streaming:", error);
         
-        setChatTitle(newTitle);
+        // Remove temporary message on error
+        setMessages((prevMessages) => 
+          prevMessages.filter((msg) => msg.id !== tempMessageId)
+        );
+        
+        setIsLoading(false);
+        setAbortController(null);
+        throw error; // Re-throw to be caught by the outer try-catch
       }
     } catch (error) {
       console.error("Error in chat flow:", error);
@@ -232,7 +312,7 @@ const ChatPage = () => {
         // Handle abort case
         toast.info("Generation was cancelled");
       }
-    } finally {
+      
       setIsLoading(false);
       setAbortController(null);
     }
@@ -300,11 +380,11 @@ const ChatPage = () => {
                   }
                 >
                   {msg.content}
-                  {msg.role === "assistant" &&
-                    isLoading &&
-                    msg.id === messages[messages.length - 1]?.id && (
-                      <span className="inline-block ml-1 animate-pulse">▌</span>
-                    )}
+                  {msg.role === "assistant" && 
+                   isLoading && 
+                   msg.id.toString().startsWith('temp-') && (
+                    <span className="inline-block ml-1 animate-pulse">▌</span>
+                  )}
                 </ChatBubbleMessage>
               </ChatBubble>
             </div>
