@@ -10,7 +10,13 @@ import {
 import { ChatInput } from "@/components/ui/chat/chat-input";
 import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
 
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[]
+}
 interface Message {
   id: number;
   sender: "User" | "AI";
@@ -18,14 +24,34 @@ interface Message {
 }
 
 const ChatPage = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: "AI", content: "Halo! Ada yang bisa saya bantu?" },
-    { id: 2, sender: "AI", content: "Hello World!" },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [abortController, setAbortController] =
-    useState<AbortController | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const { data: session } = useSession();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sessionId && messages.length >= 2 && session?.user?.email) {
+      const userMessage = messages.find((msg) => msg.sender === "User");
+      const newSessionId = `${Date.now()}`;
+      const newChat: ChatSession = {
+        id: newSessionId,
+        title: userMessage?.content || "Percakapan Baru",
+        messages,
+      };
+      saveChatToLocalStorage(session.user.email, newChat);
+      setSessionId(newSessionId);
+    }
+  }, [messages, session, sessionId]);
+  
+
+  const saveChatToLocalStorage = (email: string, chat:ChatSession)=>{
+    const key = `chats-${email}`;
+    const existing = JSON.parse(localStorage.getItem(key) || "[]");
+    const updated = [...existing.filter((c: ChatSession) => c.id !== chat.id), chat];
+    localStorage.setItem(key, JSON.stringify(updated));
+  }
 
   const handleSendMessage = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -155,9 +181,8 @@ const ChatPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-    <main className="main-bg relative flex-grow p-4 flex flex-col justify-end overflow-hidden">
-
-        <ChatMessageList className="flex flex-col gap-2 relative z-10">
+       <main className="flex-1 overflow-y-auto p-4 bg-background">
+       <ChatMessageList className="flex flex-col gap-2">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -186,8 +211,8 @@ const ChatPage = () => {
           ))}
         </ChatMessageList>
       </main>
-      <footer className="sticky bottom-0 left-0 w-full p-4 border-t bg-background">
-        <form
+      <footer className="p-4 border-t bg-background sticky bottom-0">
+      <form
           className="relative flex items-center max-w-5xl mx-auto rounded-2xl bg-gray-300 p-3"
           onSubmit={(e) => e.preventDefault()}
         >

@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { SearchForm } from "@/components/search-form";
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +13,15 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { ArrowLeft, SquarePen } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useState } from "react";
+import Link from "next/link";
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: any[];
+}
 
 // This is sample data.
 const data = {
@@ -79,6 +87,18 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: session } = useSession();
+  const [chats, setChats] = useState<ChatSession[]>([]);
+
+  React.useEffect(() => {
+    if (session?.user?.email) {
+      const stored = localStorage.getItem(`chats-${session.user.email}`);
+      if (stored) {
+        setChats(JSON.parse(stored));
+      }
+    }
+  }, [session]);
+
   return (
     <Sidebar {...props}>
       <SidebarHeader className="flex justify-between p-4 border-r border-[#fdddbd]">
@@ -99,13 +119,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <span className="px-4 text-sm font-medium text-gray-500">
             Hari Ini
           </span>
-          <SidebarMenu className="mt-2">
-            <SidebarMenuItem>
-              <SidebarMenuButton className="px-4 py-2 w-full text-left">
-                Saya punya ayam, cabai dan....
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          {chats.length > 0 && (
+            <SidebarMenu className="mt-2">
+              {chats.map((chat) => (
+                <SidebarMenuItem key={chat.id}>
+                  <Link
+                    href={`/chat?session=${chat.id}`}
+                    className="px-4 py-2 w-full text-left block"
+                  >
+                    {chat.title.length > 30
+                      ? chat.title.slice(0, 27) + "..."
+                      : chat.title}
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          )}
         </div>
         <div className="mt-6">
           <span className="px-4 text-sm font-medium text-gray-500">
