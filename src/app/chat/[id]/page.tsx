@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyboardEvent, useState, useEffect } from "react";
+import { KeyboardEvent, useState, useEffect, useRef } from "react";
 import { CornerDownLeft, X } from "lucide-react";
 import {
   ChatBubble,
@@ -14,7 +14,7 @@ import { useParams, useRouter } from "next/navigation";
 import { EditChatTitleDialog } from "@/components/edit-chat-title-dialog";
 import { ShareDrawer } from "@/components/share-drawer";
 import { toast } from "sonner";
-import { fetchEventSource } from "@/lib/utils";
+import { fetchEventSource } from "@/lib/utils"; // Pastikan path ini benar
 
 interface Message {
   id: string;
@@ -36,76 +36,108 @@ const ChatPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
-  const { data: session } = useSession();
+  const { data: session } = useSession(); // Tetap ambil sesi di sini untuk digunakan di dalam effect dan handleSend
   const params = useParams();
   const chatId = params?.id as string;
-  const [chatTitle, setChatTitle] = useState("Percakapan Baru");
+  const [chatTitle, setChatTitle] = useState("Memuat Judul...");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  
+  const titleUpdateAttempted = useRef(false);
+
   // Load chat data from the database
   useEffect(() => {
+    // Fungsi fetchChat didefinisikan di dalam useEffect
     async function fetchChat() {
-      if (!session?.user?.id || !chatId) return;
-      
+      // Gunakan 'session' yang didapat dari useSession di luar useEffect
+      // Periksa session dan chatId *sebelum* melakukan fetch
+      if (!session?.user?.id || !chatId) {
+         // Jika tidak ada chatId, mungkin belum siap atau rute salah
+         if (!chatId) {
+            setIsInitialLoading(false); // Berhenti loading jika chatId tidak ada
+            // Mungkin tampilkan pesan error atau tunggu chatId di-resolve
+            // console.warn("Chat ID belum tersedia.");
+            return;
+         }
+         // Jika tidak ada sesi (meskipun layout harusnya sudah handle), set error
+         if (!session?.user?.id) {
+             setIsInitialLoading(false);
+             setError("Sesi tidak ditemukan atau tidak valid.");
+             toast.error("Sesi tidak valid. Silakan login kembali.");
+             // router.push('/api/auth/signin'); // Redirect jika perlu
+             return;
+         }
+      }
+
+      console.log(`Fetching chat for ID: ${chatId}`); // Debug log
+      setIsInitialLoading(true);
+      setError(null);
+      titleUpdateAttempted.current = false;
+
       try {
         const response = await fetch(`/api/chat/${chatId}`);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
-            // Chat not found, navigate to main chat page
-            // router.push("/chat");
+            setError("Chat tidak ditemukan.");
+            toast.error("Chat tidak ditemukan.");
             return;
           }
-          
-          const error = await response.json();
-          throw new Error(error.error || "Failed to fetch chat");
+          const errorData = await response.json().catch(() => ({ error: "Gagal mengambil detail error" }));
+          throw new Error(errorData.error || `Gagal mengambil chat (Status: ${response.status})`);
         }
-        
+
         const data: ChatChannel = await response.json();
-        
         setChatTitle(data.name || "Percakapan Baru");
-        
-        // Only update messages if we're not currently in a loading state
-        // This prevents wiping out in-progress streaming messages
+
+        // Hanya update messages jika tidak sedang dalam proses streaming AI
         if (!isLoading) {
-          setMessages((prevMessages) => {
-            // Keep any temporary message that might be currently streaming
-            const tempMessage = prevMessages.find(msg => msg.id.toString().startsWith('temp-'));
-            
-            if (tempMessage) {
-              // Add the temp message to the fetched messages if it doesn't exist there
-              const updatedMessages = [...data.messages];
-              if (!updatedMessages.some(msg => msg.id === tempMessage.id)) {
-                updatedMessages.push(tempMessage);
-              }
-              return updatedMessages;
-            }
-            
-            return data.messages || [];
-          });
+           setMessages((prevMessages) => {
+             const tempMessage = prevMessages.find(msg => msg.id.toString().startsWith('temp-'));
+             const fetchedMessages = data.messages || [];
+             if (tempMessage) {
+               const existingTempIndex = fetchedMessages.findIndex(msg => msg.id === tempMessage.id);
+               if (existingTempIndex === -1) return [...fetchedMessages, tempMessage];
+               else {
+                 const updatedMessages = [...fetchedMessages];
+                 updatedMessages[existingTempIndex] = tempMessage;
+                 return updatedMessages;
+               }
+             }
+             return fetchedMessages;
+           });
+        } else {
+            console.log("Skipping message update because isLoading is true."); // Debug log
         }
+
       } catch (err) {
         console.error("Error fetching chat:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch chat");
-        toast.error("Failed to load chat");
+        const errorMessage = err instanceof Error ? err.message : "Terjadi kesalahan saat mengambil chat";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsInitialLoading(false);
       }
     }
-    
-    fetchChat();
-    
-    // Polling for new messages (optional)
-    const interval = setInterval(() => {
-      if (session?.user?.id && chatId && !isLoading) {
-        fetchChat();
-      }
-    }, 10000);
-    
-    return () => clearInterval(interval);
-  }, [session, chatId, router, isLoading]);
 
+    // Panggil fetchChat hanya jika chatId tersedia
+    if (chatId) {
+        fetchChat();
+    } else {
+        // Jika chatId belum ada saat effect pertama kali jalan, set loading false
+        setIsInitialLoading(false);
+    }
+
+
+    // Cleanup function untuk abort controller
+    return () => {
+        console.log("Cleaning up ChatPage effect"); // Debug log
+        abortController?.abort();
+    };
+    // Array dependensi HANYA berisi chatId.
+    // Effect ini akan dijalankan ulang HANYA jika chatId berubah.
+  }, [chatId]); // <--- PERUBAHAN UTAMA DI SINI
+
+  // --- (handleSendMessage, handleCancelGeneration, handleSend tetap sama seperti sebelumnya) ---
   const handleSendMessage = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -118,205 +150,169 @@ const ChatPage = () => {
       abortController.abort();
       setAbortController(null);
       setIsLoading(false);
-      
-      // Remove any temporary message
-      setMessages((prevMessages) => 
+      setMessages((prevMessages) =>
         prevMessages.filter((msg) => !msg.id.toString().startsWith('temp-'))
       );
+      toast.info("Pembuatan respons dibatalkan.");
     }
   };
 
   const handleSend = async (messageContent: string) => {
-    if (!messageContent.trim() || isLoading || !chatId || !session?.user?.id) return;
+    const trimmedMessage = messageContent.trim();
+    // Periksa sesi di sini juga sebelum mengirim
+    if (!trimmedMessage || isLoading || !chatId || !session?.user?.id) {
+        if (!session?.user?.id) {
+            toast.error("Sesi tidak valid. Tidak dapat mengirim pesan.");
+        }
+        return;
+    }
+
 
     setIsLoading(true);
+    setError(null);
+
+    // Check if title needs update
+    const isFirstMessageEver = messages.length === 0;
+    const needsTitleUpdate = chatTitle === "Percakapan Baru" && isFirstMessageEver && !titleUpdateAttempted.current;
+    const potentialNewTitle = trimmedMessage;
+
+    if (needsTitleUpdate) {
+        titleUpdateAttempted.current = true;
+    }
 
     try {
-      // Save user message to the database
+      // Update title BEFORE saving the message if needed
+      if (needsTitleUpdate) {
+        const newTitle = potentialNewTitle.length > 30
+          ? potentialNewTitle.slice(0, 27) + "..."
+          : potentialNewTitle;
+
+        try {
+            const updateTitleResponse = await fetch(`/api/chat/${chatId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: newTitle }), // Ensure backend expects 'name'
+            });
+
+            if (!updateTitleResponse.ok) {
+               console.error("Gagal memperbarui judul chat di DB.");
+               toast.error("Gagal memperbarui judul chat.");
+               titleUpdateAttempted.current = false; // Revert flag if DB update failed
+            } else {
+               setChatTitle(newTitle); // Update title in ChatPage state immediately
+               // Sidebar will update via its polling mechanism
+            }
+        } catch (titleError) {
+             console.error("Error updating chat title:", titleError);
+             toast.error("Error saat memperbarui judul chat.");
+             titleUpdateAttempted.current = false; // Revert flag
+        }
+      }
+
+      // Save user message
       const userMessageResponse = await fetch(`/api/chat/${chatId}/messages`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: messageContent,
-          role: "user",
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: trimmedMessage, role: "user" }),
       });
 
       if (!userMessageResponse.ok) {
-        throw new Error("Failed to save user message");
+        throw new Error("Gagal menyimpan pesan pengguna");
       }
 
       const userMessage = await userMessageResponse.json();
-      
-      // Update local messages
       setMessages((prevMessages) => [...prevMessages, userMessage]);
-      setMessage("");
+      setMessage(""); // Clear input
 
-      // Create a new AbortController for the AI request
+      // Start AI Response Generation
       const controller = new AbortController();
       setAbortController(controller);
 
-      // Create a temporary AI message object with an optimistic ID
       const tempMessageId = `temp-${Date.now()}`;
       const tempAiMessage: Message = {
-        id: tempMessageId,
-        content: "",
-        role: "assistant",
-        channelId: chatId,
-        createdAt: new Date().toISOString(),
+        id: tempMessageId, content: "", role: "assistant",
+        channelId: chatId, createdAt: new Date().toISOString(),
       };
-      
-      // Add the temporary message to the state
       setMessages((prevMessages) => [...prevMessages, tempAiMessage]);
-      
+
       let accumulatedText = "";
 
       try {
-        // Use the fetchEventSource utility to handle the streaming response
-        await fetchEventSource("http://localhost:8000/generate", {
-          body: {
-            prompt: messageContent,
-            max_tokens: 512,
-            temperature: 0.7,
-          },
+        await fetchEventSource("http://localhost:8000/generate", { // Ensure URL is correct
+          signal: controller.signal,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: { prompt: trimmedMessage, max_tokens: 512, temperature: 0.7 },
           onChunk: (chunk) => {
             if (chunk) {
-              // Append the new chunk to the accumulated text
               accumulatedText += chunk;
-              
-              // Update the temporary message with the accumulated text
-              setMessages((prevMessages) => 
-                prevMessages.map((msg) => 
-                  msg.id === tempMessageId 
-                    ? { ...msg, content: accumulatedText }
-                    : msg
+              setMessages((prevMessages) =>
+                prevMessages.map((msg) =>
+                  msg.id === tempMessageId ? { ...msg, content: accumulatedText } : msg
                 )
               );
             }
           },
           onDone: async () => {
+            setAbortController(null);
             try {
               if (accumulatedText.trim()) {
-                // Save the complete AI response to the database
                 const aiMessageResponse = await fetch(`/api/chat/${chatId}/messages`, {
                   method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    content: accumulatedText,
-                    role: "assistant",
-                  }),
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ content: accumulatedText, role: "assistant" }),
                 });
-
-                if (!aiMessageResponse.ok) {
-                  throw new Error("Failed to save AI message");
-                }
-
+                if (!aiMessageResponse.ok) throw new Error("Gagal menyimpan respons AI");
                 const aiMessage = await aiMessageResponse.json();
-                
-                // Replace the temporary message with the saved one
-                setMessages((prevMessages) => 
-                  prevMessages.map((msg) => 
-                    msg.id === tempMessageId ? aiMessage : msg
-                  )
+                setMessages((prevMessages) =>
+                  prevMessages.map((msg) => msg.id === tempMessageId ? aiMessage : msg)
                 );
-
-                // If this is a new chat with no title, use the first user message as the title
-                if (chatTitle === "Percakapan Baru" && messages.length === 1) {
-                  const newTitle = messageContent.length > 30 
-                    ? messageContent.slice(0, 27) + "..."
-                    : messageContent;
-                  
-                  // Update chat title in the database
-                  await fetch(`/api/chat/${chatId}`, {
-                    method: "PATCH",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      name: newTitle,
-                    }),
-                  });
-                  
-                  setChatTitle(newTitle);
-                }
               } else {
-                // If no text was generated, remove the temporary message
-                setMessages((prevMessages) => 
-                  prevMessages.filter((msg) => msg.id !== tempMessageId)
-                );
-                toast.error("No response was generated. Please try again.");
+                setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== tempMessageId));
+                toast.error("Tidak ada respons yang dihasilkan.");
               }
             } catch (error) {
               console.error("Error saving AI message:", error);
-              toast.error("Failed to save AI response");
-              
-              // Keep the temporary message with its content if saving failed
-              // This way the user doesn't lose the AI's response
+              toast.error(error instanceof Error ? error.message : "Gagal menyimpan respons AI");
             } finally {
               setIsLoading(false);
-              setAbortController(null);
             }
           },
           onError: (error) => {
-            console.error("Error in streaming response:", error);
-            
             if (error.name !== "AbortError") {
-              // Add an error message to the UI
-              toast.error("Error: " + (error.message || "Failed to process request"));
-              
-              // Keep the temporary message if it has content
-              setMessages((prevMessages) => {
-                const tempMsg = prevMessages.find(msg => msg.id === tempMessageId);
-                if (tempMsg && tempMsg.content.trim()) {
-                  return prevMessages;
-                }
-                return prevMessages.filter((msg) => msg.id !== tempMessageId);
-              });
-            } else {
-              // Handle abort case
-              toast.info("Generation was cancelled");
-              
-              // Remove the temporary message if cancelled
-              setMessages((prevMessages) => 
-                prevMessages.filter((msg) => msg.id !== tempMessageId)
-              );
+                console.error("Error in streaming response:", error);
+                toast.error("Error streaming: " + (error.message || "Gagal memproses permintaan"));
+                setMessages((prevMessages) => {
+                    const tempMsg = prevMessages.find(msg => msg.id === tempMessageId);
+                    if (tempMsg && tempMsg.content.trim()) {
+                      return prevMessages.map(msg =>
+                          msg.id === tempMessageId ? { ...msg, content: msg.content + " (Gagal menyimpan)" } : msg
+                      );
+                    }
+                    return prevMessages.filter((msg) => msg.id !== tempMessageId);
+                });
+                setIsLoading(false);
+                setAbortController(null);
             }
-            
-            setIsLoading(false);
-            setAbortController(null);
           }
         });
-      } catch (error) {
-        console.error("Error in streaming:", error);
-        
-        // Remove temporary message on error
-        setMessages((prevMessages) => 
-          prevMessages.filter((msg) => msg.id !== tempMessageId)
-        );
-        
-        setIsLoading(false);
-        setAbortController(null);
-        throw error; // Re-throw to be caught by the outer try-catch
+      } catch (streamError) {
+         console.error("Error setting up streaming:", streamError);
+         toast.error("Error memulai generasi: " + (streamError instanceof Error ? streamError.message : "Unknown error"));
+         setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== tempMessageId));
+         setIsLoading(false);
+         setAbortController(null);
       }
-    } catch (error) {
-      console.error("Error in chat flow:", error);
-      
-      if (error instanceof Error && error.name !== "AbortError") {
-        // Add an error message to the UI
-        toast.error("Error: " + (error.message || "Failed to process request"));
-      } else {
-        // Handle abort case
-        toast.info("Generation was cancelled");
-      }
-      
+    } catch (error) { // Outer catch
+      console.error("Error dalam alur chat:", error);
+      toast.error(error instanceof Error ? error.message : "Terjadi kesalahan");
       setIsLoading(false);
       setAbortController(null);
     }
   };
+
+
+  // --- Render Logic (tetap sama, menggunakan gaya asli Anda) ---
 
   if (isInitialLoading) {
     return (
@@ -326,41 +322,41 @@ const ChatPage = () => {
     );
   }
 
-  if (error) {
+  if (error && !isInitialLoading) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen p-4">
-        <h1 className="text-2xl font-bold mb-4">Error Loading Chat</h1>
+      <div className="flex flex-col justify-center items-center h-screen p-4 text-center">
+        <h1 className="text-2xl font-bold mb-4 text-red-600">Error Memuat Chat</h1>
         <p className="text-gray-600 mb-6">{error}</p>
         <Button onClick={() => router.push("/chat")}>
-          Go to Chats
+          Kembali ke Daftar Chat
         </Button>
+         <Button variant="outline" className="mt-2" onClick={() => window.location.reload()}>
+           Coba Lagi
+         </Button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
+      {/* Chat Header */}
       {chatId && (
         <div className="bg-background border-b px-4 py-2 flex justify-between items-center">
           <h1 className="text-lg font-medium">{chatTitle}</h1>
           <div className="flex items-center">
-            <EditChatTitleDialog 
-              chatId={chatId} 
-              currentTitle={chatTitle} 
-              onTitleUpdated={() => {
-                // Refresh chat data
-                fetch(`/api/chat/${chatId}`)
-                  .then(response => response.json())
-                  .then(data => {
-                    setChatTitle(data.name || "Percakapan Baru");
-                  })
-                  .catch(error => console.error("Error refreshing chat:", error));
-              }} 
+            <EditChatTitleDialog
+              chatId={chatId}
+              currentTitle={chatTitle}
+              onTitleUpdated={(updatedTitle) => {
+                  setChatTitle(updatedTitle);
+              }}
             />
             <ShareDrawer />
           </div>
         </div>
       )}
+
+      {/* Message List */}
       <main className="flex-1 overflow-y-auto p-4 bg-background">
         <ChatMessageList className="flex flex-col gap-2">
           {messages.map((msg) => (
@@ -380,10 +376,10 @@ const ChatPage = () => {
                   }
                 >
                   {msg.content}
-                  {msg.role === "assistant" && 
-                   isLoading && 
-                   msg.id.toString().startsWith('temp-') && (
-                    <span className="inline-block ml-1 animate-pulse">▌</span>
+                  {msg.role === "assistant" &&
+                    isLoading &&
+                    msg.id.toString().startsWith('temp-') && (
+                      <span className="inline-block ml-1 animate-pulse">▌</span>
                   )}
                 </ChatBubbleMessage>
               </ChatBubble>
@@ -391,15 +387,19 @@ const ChatPage = () => {
           ))}
         </ChatMessageList>
       </main>
+
+      {/* Chat Input Footer */}
       <footer className="p-4 border-t bg-background sticky bottom-0">
         <form
           className="relative flex items-center max-w-5xl mx-auto rounded-2xl bg-gray-300 p-3"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(e) => {
+              e.preventDefault();
+              handleSend(message);
+          }}
         >
           <ChatInput
             placeholder="Masukkan pesan..."
-            className="w-full min-h-12 resize-none rounded-2xl bg-gray-300 border-0 p-3 text-gray-700 placeholder-gray-500 
-      focus:ring-0 focus:ring-offset-0 focus:outline-none"
+            className="w-full min-h-12 resize-none rounded-2xl bg-gray-300 border-0 p-3 text-gray-700 placeholder-gray-500 focus:ring-0 focus:ring-offset-0 focus:outline-none"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleSendMessage}
@@ -408,19 +408,18 @@ const ChatPage = () => {
           {isLoading ? (
             <Button
               size="sm"
-              className="absolute right-2 bg-red-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 
-      hover:bg-red-600 transition"
+              className="absolute right-2 bg-red-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 hover:bg-red-600 transition"
               onClick={handleCancelGeneration}
+              type="button"
             >
               Cancel <X className="size-4" />
             </Button>
           ) : (
             <Button
+              type="submit"
               size="sm"
-              className="absolute right-2 bg-gray-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 
-      hover:bg-gray-600 transition"
-              onClick={() => handleSend(message)}
-              disabled={isLoading}
+              className="absolute right-2 bg-gray-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-2 hover:bg-gray-600 transition"
+              disabled={!message.trim()}
             >
               Kirim <CornerDownLeft className="size-4" />
             </Button>

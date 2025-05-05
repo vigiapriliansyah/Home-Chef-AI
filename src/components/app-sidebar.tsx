@@ -49,69 +49,6 @@ interface ChatSession {
   updatedAt?: Date; // Add updatedAt field to track when the chat was last updated
 }
 
-// This is sample data.
-const data = {
-  navMain: [
-    {
-      title: "Getting Started",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Today",
-      url: "#",
-      items: [
-        {
-          title: "Routing",
-          url: "#",
-        },
-        {
-          title: "Data Fetching",
-          url: "#",
-          isActive: true,
-        },
-        {
-          title: "Rendering",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Yesterday",
-      url: "#",
-      items: [
-        {
-          title: "Components",
-          url: "#",
-        },
-        {
-          title: "File Conventions",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "7 days ago",
-      url: "#",
-      items: [
-        {
-          title: "Accessibility",
-          url: "#",
-        },
-      ],
-    },
-  ],
-};
-
 // Function to group chats by time periods
 const groupChatsByDate = (chats: ChatSession[]) => {
   const now = new Date();
