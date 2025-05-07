@@ -120,13 +120,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
 
     // Set up a polling interval to refresh chats
-    const interval = setInterval(() => {
-      if (session?.user?.id) {
-        fetchChats();
-      }
-    }, 3000); // Poll every 3 seconds for more responsive updates
+    // const interval = setInterval(() => {
+    //   if (session?.user?.id) {
+    //     fetchChats();
+    //   }
+    // }, 3000); // Poll every 3 seconds for more responsive updates
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [session, pathname]); // Add pathname as dependency to refetch when route changes
 
   const createNewChat = async () => {
