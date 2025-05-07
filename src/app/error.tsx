@@ -44,7 +44,7 @@ export default function Error({
         <h1 className="text-3xl font-bold mb-4">Something went wrong!</h1>
 
         <p className="text-lg mb-8">
-          We're sorry, but there was an error processing your request.
+          We&apos;re sorry, but there was an error processing your request.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

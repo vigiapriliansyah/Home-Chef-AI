@@ -30,7 +30,7 @@ export default function ChatNotFound() {
         <h1 className="text-2xl font-bold mb-4">Chat Not Found</h1>
         
         <p className="text-lg mb-8">
-          The chat you're looking for doesn't exist or has been removed.
+          The chat you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         
         <Button 

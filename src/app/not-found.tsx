@@ -34,7 +34,7 @@ export default function NotFound() {
         <h1 className="text-3xl font-bold mb-4">Page Not Found</h1>
         
         <p className="text-xl mb-8">
-          Oops! The page you're looking for doesn't exist.
+          Oops! The page you&apos;re looking for doesn&apos;t exist.
         </p>
         
         <div className="flex items-center justify-center gap-2 text-pink-300">

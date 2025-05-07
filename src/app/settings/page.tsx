@@ -3,19 +3,15 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Eye,
   Mail,
-  Phone,
-  Calendar,
   User,
   KeyRound,
   Loader2,
   Check,
-  RefreshCw,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
@@ -26,7 +22,7 @@ export default function SettingsPage() {
   const [hasThirdPartyAuth, setHasThirdPartyAuth] = useState(false);
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<Record<string, any>>({});
 
   // Form state
   const [name, setName] = useState("");
@@ -72,7 +68,7 @@ export default function SettingsPage() {
     if (session?.user?.id && !isDataLoaded) {
       fetchUserData();
     }
-  }, [session]);
+  }, [session, isDataLoaded, fetchUserData]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,8 +166,9 @@ export default function SettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
+      toast.error(errorMessage);
     } finally {
       setIsPasswordChanging(false);
     }
@@ -184,12 +181,6 @@ export default function SettingsPage() {
     (!hasThirdPartyAuth &&
       name === userData?.name &&
       email === userData?.email);
-
-  // Handle manual refresh
-  const handleRefresh = async () => {
-    await fetchUserData();
-    toast.success("Profile data refreshed");
-  };
 
   // Show loading state while session is loading
   if (status === "loading" || !isDataLoaded) {

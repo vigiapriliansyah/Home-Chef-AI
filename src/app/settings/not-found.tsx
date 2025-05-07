@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,7 +30,7 @@ export default function SettingsNotFound() {
         <h1 className="text-2xl font-bold mb-4">Settings Page Not Found</h1>
         
         <p className="text-lg mb-8">
-          The settings page you're looking for doesn't exist.
+          The settings page you&apos;re looking for doesn&apos;t exist.
         </p>
         
         <Button 

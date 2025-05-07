@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/chat - Create a new chat
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await request.json();
     const { name = "Percakapan Baru" } = body;
 
     const chat = await prisma.channel.create({

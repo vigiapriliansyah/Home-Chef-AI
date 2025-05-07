@@ -45,7 +45,7 @@ export async function PUT(req: Request) {
     }
 
     // Only update the fields that are provided and allowed to be updated
-    const updateData: any = {};
+    const updateData: Record<string, string> = {};
 
     // Always allow name updates
     if (name) updateData.name = name;
