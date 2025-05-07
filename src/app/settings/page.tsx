@@ -9,6 +9,10 @@ import Image from "next/image";
 export default function SettingsPage() {
   const { data: session } = useSession();
 
+  // Check if user is logged in with Google by checking the email provider
+  // Since session.user.provider doesn't exist in the type, we need to check another way
+  const isGoogleUser = session?.user?.email?.endsWith("@gmail.com") || false;
+
   return (
     <div className="max-w-2xl px-4 sm:px-6 md:px-8 mx-auto text-foreground">
       {/* Avatar + Title */}
@@ -25,6 +29,11 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-pink-500 dark:text-pink-300 mt-4">
           Personal Info
         </h1>
+        {isGoogleUser && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Google account information cannot be modified
+          </p>
+        )}
       </div>
 
       {/* Form */}
@@ -38,35 +47,11 @@ export default function SettingsPage() {
             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="name"
-              defaultValue={session?.user?.name}
+              defaultValue={session?.user?.name ?? ""}
               className="pl-9 dark:bg-[#1e293b]"
-              disabled
+              disabled={isGoogleUser}
             />
           </div>
-        </div>
-
-        {/* Password */}
-        <div>
-          <label htmlFor="password" className="text-sm font-medium block mb-1">
-            Your Password :
-          </label>
-          <div className="relative">
-            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="password"
-              type="password"
-              defaultValue="12345678"
-              className="pl-9 dark:bg-[#1e293b]"
-            />
-            <Eye className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" />
-          </div>
-          <Button
-            variant="link"
-            size="sm"
-            className="pl-0 text-sm text-muted-foreground"
-          >
-            Change Your Password
-          </Button>
         </div>
 
         {/* Email */}
@@ -79,12 +64,26 @@ export default function SettingsPage() {
             <Input
               id="email"
               type="email"
-              defaultValue={session?.user?.email}
+              defaultValue={session?.user?.email ?? ""}
               className="pl-9 dark:bg-[#1e293b]"
-              disabled
+              disabled={isGoogleUser}
             />
           </div>
         </div>
+        {/* Password */}
+        <div>
+          {!isGoogleUser && (
+            <Button type="submit" className="w-full">
+              Change Your Password
+            </Button>
+          )}
+        </div>
+        {/* Submit button - only show for non-Google users */}
+        {!isGoogleUser && (
+          <Button type="submit" className="w-full">
+            Save Changes
+          </Button>
+        )}
       </form>
     </div>
   );

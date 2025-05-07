@@ -338,26 +338,25 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Chat Header */}
-      {chatId && (
-        <div className="bg-background border-b px-4 py-2 flex justify-between items-center">
-          <h1 className="text-lg font-medium">{chatTitle}</h1>
-          <div className="flex items-center">
-            <EditChatTitleDialog
-              chatId={chatId}
-              currentTitle={chatTitle}
-              onTitleUpdated={(updatedTitle) => {
-                  setChatTitle(updatedTitle);
-              }}
-            />
-            <ShareDrawer />
+    <div className="flex flex-col h-full relative">
+      {/* Background dan overlay teks hanya jika belum ada pesan */}
+      <main className="flex-1 overflow-y-auto p-4 bg-background relative">
+        {/* Overlay background dan teks di tengah area chat */}
+        {messages.length === 0 && !isInitialLoading && !error && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <div className="relative flex items-center justify-center w-full h-full">
+              <img
+                src="/logobnw.png"
+                alt="Home Chef Logo Background"
+                className="max-w-lg w-full h-auto opacity-10 select-none"
+                style={{ objectFit: 'contain' }}
+              />
+              <span className="absolute inset-0 flex items-center justify-center text-3xl md:text-5xl font-extrabold text-center text-pink-200 drop-shadow-lg opacity-80">
+                Temukan Resep Lezat dengan AI !
+              </span>
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Message List */}
-      <main className="flex-1 overflow-y-auto p-4 bg-background">
+        )}
         <ChatMessageList className="flex flex-col gap-2">
           {messages.map((msg) => (
             <div

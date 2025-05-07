@@ -16,7 +16,7 @@ import { ArrowLeft, SquarePen, Trash2, MoreVertical, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { EditChatTitleDialog } from "./edit-chat-title-dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -92,41 +92,42 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [isClearingAll, setIsClearingAll] = useState(false);
   const [showClearDialog, setShowClearDialog] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   // Load chats from the database
-  useEffect(() => {
-    const fetchChats = async () => {
-      if (!session?.user?.id) return;
+  const fetchChats = async () => {
+    if (!session?.user?.id) return;
 
-      try {
-        const response = await fetch("/api/chat");
-        if (!response.ok) {
-          throw new Error("Failed to fetch chats");
-        }
-        const data = await response.json();
-        setChats(data);
-      } catch (error) {
-        console.error("Error fetching chats:", error);
-      } finally {
-        setIsLoading(false);
+    try {
+      const response = await fetch("/api/chat");
+      if (!response.ok) {
+        throw new Error("Failed to fetch chats");
       }
-    };
+      const data = await response.json();
+      setChats(data);
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (session?.user?.id) {
       fetchChats();
     } else {
       setIsLoading(false);
     }
 
-    // Set up a polling interval to refresh chats (optional)
+    // Set up a polling interval to refresh chats
     const interval = setInterval(() => {
       if (session?.user?.id) {
         fetchChats();
       }
-    }, 10000); // Poll every 10 seconds
+    }, 3000); // Poll every 3 seconds for more responsive updates
 
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session, pathname]); // Add pathname as dependency to refetch when route changes
 
   const createNewChat = async () => {
     if (!session?.user?.id) return;
@@ -246,6 +247,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <EditChatTitleDialog
                 chatId={chat.id}
                 currentTitle={chat.name || ""}
+                onUpdate={fetchChats} // Add callback to refresh chats after title update
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -289,19 +291,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </button>
           <div className="flex gap-2 ml-22">
             <button
-              className="text-lg flex items-center"
+              className="text-lg flex items-center cursor-pointer"
               onClick={createNewChat}
             >
               Chat Baru
             </button>
-            <button onClick={createNewChat}>
+            <button onClick={createNewChat} className="cursor-pointer">
               <SquarePen className="w-5 h-5 text-gray-400" />
             </button>
           </div>
         </div>
 
         {/* Clear All Chats Button */}
-        {chats.length > 0 && (
+        {/* {chats.length > 0 && (
           <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
             <AlertDialogTrigger asChild>
               <div className=" flex justify-between items-center">
@@ -338,7 +340,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        )}
+        )} */}
       </SidebarHeader>
       <SidebarContent className="border-r border-[#fdddbd]">
         {isLoading ? (
