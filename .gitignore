@@ -56,3 +56,4 @@ prisma/dev.db-trace.jsonl
 prisma/dev.db-trace.jsonl.gz
 prisma/dev.db-trace.jsonl.gz.part   
 
+public/uploads/*
