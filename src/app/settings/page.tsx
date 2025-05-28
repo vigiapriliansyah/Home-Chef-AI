@@ -8,6 +8,7 @@ import {
   KeyRound,
   Loader2,
   Check,
+  Upload,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -23,6 +24,8 @@ export default function SettingsPage() {
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [userData, setUserData] = useState<Record<string, any>>({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -174,6 +177,57 @@ export default function SettingsPage() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Preview image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload image
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('/api/user/upload-profile', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      
+      // Update user data with new image URL
+      setUserData(prev => ({
+        ...prev,
+        image: data.imageUrl
+      }));
+
+      // Update session
+      await updateSession({
+        user: {
+          ...session?.user,
+          image: data.imageUrl
+        }
+      });
+
+      toast.success('Profile photo updated successfully');
+    } catch (error) {
+      toast.error('Failed to upload profile photo');
+      setPreviewImage(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Determine if we should disable the save button
   const isSaveDisabled =
     isLoading ||
@@ -195,15 +249,36 @@ export default function SettingsPage() {
     <div className="max-w-2xl px-4 sm:px-6 md:px-8 mx-auto text-foreground">
       {/* Avatar + Title */}
       <div className="flex flex-col items-center mb-6">
-        <div className="w-28 h-28 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-4xl font-bold shadow-md overflow-hidden">
-          <Image
-            src={userData?.image || "/profile.png"}
-            alt="profile"
-            width={110}
-            height={100}
-            className="rounded-full object-cover w-full h-full"
+        <div className="relative group">
+          <div className="w-28 h-28 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-4xl font-bold shadow-md overflow-hidden">
+            <Image
+              src={previewImage || userData?.image || "/profile.png"}
+              alt="profile"
+              width={110}
+              height={100}
+              className="rounded-full object-cover w-full h-full"
+            />
+          </div>
+          <label 
+            htmlFor="profile-upload" 
+            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity"
+          >
+            <Upload className="h-6 w-6 text-white" />
+          </label>
+          <input
+            id="profile-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+            disabled={isUploading}
           />
         </div>
+        {isUploading && (
+          <div className="mt-2">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          </div>
+        )}
         <h1 className="text-2xl font-bold text-pink-500 dark:text-pink-300 mt-4">
           Personal Info
         </h1>
