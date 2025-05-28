@@ -2,14 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Mail,
-  User,
-  KeyRound,
-  Loader2,
-  Check,
-  Upload,
-} from "lucide-react";
+import { Mail, User, KeyRound, Loader2, Check, Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -17,7 +10,7 @@ import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { data: session, update: updateSession, status } = useSession();
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordChanging, setIsPasswordChanging] = useState(false);
   const [hasThirdPartyAuth, setHasThirdPartyAuth] = useState(false);
@@ -79,47 +72,47 @@ export default function SettingsPage() {
     setIsSuccessful(false);
 
     // try {
-      const response = await fetch("/api/user/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email: hasThirdPartyAuth ? userData?.email : email, // Only send email if not third-party auth
-        }),
-      });
+    const response = await fetch("/api/user/update", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email: hasThirdPartyAuth ? userData?.email : email, // Only send email if not third-party auth
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update profile");
-      }
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to update profile");
+    }
 
-      // Get the updated user data from the response
-      const { user } = data;
+    // Get the updated user data from the response
+    const { user } = data;
 
-      // Update local state with new data
-      setUserData({
-        ...userData,
+    // Update local state with new data
+    setUserData({
+      ...userData,
+      name: user.name,
+      email: user.email,
+    });
+    console.log("user", user);
+
+    // Update session for UI consistency
+    await updateSession({
+      user: {
         name: user.name,
         email: user.email,
-      });
-      console.log("user",user);
-      
-      // Update session for UI consistency
-      await updateSession({
-        user: {
-          name: user.name,
-          email: user.email,
-        },
-      });
+      },
+    });
 
-      setIsSuccessful(true);
-      toast.success("Profile updated successfully");
+    setIsSuccessful(true);
+    toast.success("Profile updated successfully");
 
-      // Refresh user data
-      fetchUserData();
+    // Refresh user data
+    fetchUserData();
     // } catch (error: any) {
     //   toast.error(error.message || "Something went wrong");
     // } finally {
@@ -170,7 +163,8 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
+      const errorMessage =
+        error instanceof Error ? error.message : "Something went wrong";
       toast.error(errorMessage);
     } finally {
       setIsPasswordChanging(false);
@@ -191,37 +185,37 @@ export default function SettingsPage() {
     // Upload image
     setIsUploading(true);
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append("image", file);
 
     try {
-      const response = await fetch('/api/user/upload-profile', {
-        method: 'POST',
+      const response = await fetch("/api/user/upload-profile", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload image');
+        throw new Error("Failed to upload image");
       }
 
       const data = await response.json();
-      
+
       // Update user data with new image URL
-      setUserData(prev => ({
+      setUserData((prev) => ({
         ...prev,
-        image: data.imageUrl
+        image: data.imageUrl,
       }));
 
       // Update session
       await updateSession({
         user: {
           ...session?.user,
-          image: data.imageUrl
-        }
+          image: data.imageUrl,
+        },
       });
 
-      toast.success('Profile photo updated successfully');
+      toast.success("Profile photo updated successfully");
     } catch (error) {
-      toast.error('Failed to upload profile photo');
+      toast.error("Failed to upload profile photo");
       setPreviewImage(null);
     } finally {
       setIsUploading(false);
@@ -259,20 +253,20 @@ export default function SettingsPage() {
               className="rounded-full object-cover w-full h-full"
             />
           </div>
-          <label 
-            htmlFor="profile-upload" 
+          <label
+            htmlFor="profile-upload"
             className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity"
           >
             <Upload className="h-6 w-6 text-white" />
           </label>
-          <input
-            id="profile-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-            disabled={isUploading}
-          />
+            <input
+              id="profile-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+              disabled={isUploading}
+            />
         </div>
         {isUploading && (
           <div className="mt-2">
@@ -306,7 +300,6 @@ export default function SettingsPage() {
               onChange={(e) => setName(e.target.value)}
               className="pl-9 dark:bg-[#1e293b]"
               disabled={hasThirdPartyAuth}
-
             />
           </div>
         </div>
