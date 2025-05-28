@@ -126,7 +126,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url('/logobnw.png');
+  background-image: url("/logobnw.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: 400px;
@@ -134,4 +134,3 @@
   pointer-events: none;
   z-index: 0;
 }
-
