@@ -1,11 +1,11 @@
 import { NextAuthOptions } from "next-auth";
+import { AdapterUser } from "next-auth/adapters";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
-import { compare, hash } from "bcrypt";
+import { compare } from "bcrypt";
 
-// Extend the Session type to include user.id
 declare module "next-auth" {
   interface Session {
     user: {
@@ -14,6 +14,17 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
     };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    sub?: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    [key: string]: any;
   }
 }
 
@@ -32,33 +43,26 @@ export const authOptions: NextAuthOptions = {
       }
     }),
     CredentialsProvider({
-      // The name to display on the sign in form (e.g. "Sign in with...")
       name: "Credentials",
-      // `credentials` is used to generate a form on the sign in page.
       credentials: {
         email: { label: "Email", type: "email", placeholder: "example@example.com" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Add your own logic here to validate credentials
-        // This is where you would typically verify against your database
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        // Check if user exists
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email,
           },
         });
 
-        // If no user was found or no password (could be a social login)
         if (!user || !user.password) {
           return null;
         }
 
-        // Check if password matches
         const passwordMatch = await compare(credentials.password, user.password);
 
         if (!passwordMatch) {
@@ -76,37 +80,45 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/auth/signin',
-    // signOut: '/auth/signout',
-    // error: '/auth/error',
-    // verifyRequest: '/auth/verify-request',
-    newUser: '/chat', // Redirect new users to chat page
+    newUser: '/chat',
   },
   session: {
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session, token }) {
-      // Send properties to the client, like an access_token and user id from a provider
-      if (token && session.user) {
-        session.user.id = token.sub as string;
-      }
-      return session;
-    },
-    async jwt({ token, user, account }) {
-      // Persist the user id to the token
+    async jwt({ token, user, trigger, session: newSessionDataFromClient }) {
       if (user) {
         token.sub = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.image = user.image;
       }
+
+      if (trigger === "update" && newSessionDataFromClient?.user) {
+        const clientUser = newSessionDataFromClient.user;
+        if (clientUser.name !== undefined) token.name = clientUser.name;
+        if (clientUser.email !== undefined) token.email = clientUser.email;
+        if (clientUser.image !== undefined) token.image = clientUser.image;
+      }
+
       return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.sub as string;
+        session.user.name = token.name as string | null;
+        session.user.email = token.email as string | null;
+        session.user.image = token.image as string | null;
+      }
+      return session;
     },
   },
   events: {
     async signIn({ user, account, profile }) {
-      // Handle sign-in event, e.g., for Google sign-ins
       if (account?.provider === 'google' && profile?.email) {
-        // User already exists in the database because of the adapter
-        // We don't need to do anything special here
+        // Optional event handling
       }
     },
   },
-}; 
+  secret: process.env.NEXTAUTH_SECRET,
+};
