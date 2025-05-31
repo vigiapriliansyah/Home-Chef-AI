@@ -1,0 +1,211 @@
+graph TB
+    %% ========================================
+    %% PROJECT 1: HOME CHEF AI WEB APPLICATION - DETAILED
+    %% ========================================
+    
+    subgraph "🌐 HOME CHEF AI WEB APPLICATION (Next.js 15 + TypeScript)"
+        direction TB
+        
+        %% Frontend Components
+        subgraph "📱 Frontend Components & Pages"
+            HOME["🏠 Landing Page<br/>• src/app/page.tsx<br/>• Welcome interface<br/>• Login/Register prompts<br/>• Logo & branding"]
+            CHAT["💬 Chat Interface<br/>• src/app/chat/[id]/page.tsx<br/>• Message bubbles<br/>• Streaming responses<br/>• Real-time updates"]
+            AUTH_PAGES["🔐 Auth Pages<br/>• src/app/auth/signin<br/>• src/app/auth/register<br/>• Login forms<br/>• OAuth buttons"]
+            SHARED["🔗 Shared Chat<br/>• src/app/shared/[shareId]<br/>• Public chat view<br/>• Read-only interface"]
+            ERRORS["❌ Error Pages<br/>• src/app/error.tsx<br/>• src/app/not-found.tsx<br/>• 404 handling<br/>• Error boundaries"]
+        end
+        
+        subgraph "🎨 UI Component Library"
+            SHADCN["🧩 Shadcn/UI Components<br/>• components/ui/<br/>• Button, Input, Dialog<br/>• Chat bubbles<br/>• Dropdown menus"]
+            CUSTOM["🛠️ Custom Components<br/>• SiteHeader<br/>• UserDropdown<br/>• ShareDrawer<br/>• LoginDialog"]
+            SIDEBAR["📋 Sidebar Components<br/>• AppSidebar<br/>• SettingSidebar<br/>• Chat history<br/>• Theme switcher"]
+        end
+        
+        %% Business Logic
+        subgraph "🧠 Business Logic & State Management"
+            NEXTAUTH["🔐 NextAuth.js Configuration<br/>• src/lib/auth.ts<br/>• Google OAuth provider<br/>• Credentials provider<br/>• Session management"]
+            HOOKS["🪝 Custom React Hooks<br/>• src/hooks/<br/>• useChat<br/>• useSession<br/>• useLocalStorage"]
+            UTILS["🛠️ Utility Functions<br/>• src/lib/utils.ts<br/>• fetchEventSource<br/>• processChunk<br/>• cn (class names)"]
+            THEME["🎨 Theme Management<br/>• ThemeProvider<br/>• Dark/Light mode<br/>• CSS variables<br/>• Tailwind classes"]
+        end
+        
+        %% API Layer Details
+        subgraph "🔌 API Routes & Middleware"
+            API_AUTH["🔐 Auth API Routes<br/>• /api/auth/[...nextauth]<br/>• /api/auth/register<br/>• Session handling<br/>• User creation"]
+            API_CHAT["💬 Chat API Routes<br/>• /api/chat (GET, POST)<br/>• /api/chat/[id] (GET, PUT, DELETE)<br/>• /api/chat/[id]/messages<br/>• /api/chat/[id]/share"]
+            MIDDLEWARE["⚙️ Middleware<br/>• src/middleware.ts<br/>• Route protection<br/>• Auth validation<br/>• Redirect logic"]
+            VALIDATION["✅ Request Validation<br/>• Zod schemas<br/>• Input sanitization<br/>• Error handling"]
+        end
+        
+        %% Database Layer
+        subgraph "💾 Database Schema & ORM"
+            PRISMA_SCHEMA["📋 Prisma Schema<br/>• prisma/schema.prisma<br/>• User model<br/>• Channel model<br/>• Message model<br/>• Account/Session models"]
+            DB_OPERATIONS["🔧 Database Operations<br/>• CRUD operations<br/>• Relationship queries<br/>• Transaction handling<br/>• Migration management"]
+            SQLITE["🗄️ SQLite Database<br/>• dev.db file<br/>• Users table<br/>• Channels table<br/>• Messages table<br/>• NextAuth tables"]
+        end
+        
+        %% Configuration
+        subgraph "⚙️ Configuration & Build"
+            NEXTCONFIG["📝 Next.js Config<br/>• next.config.ts<br/>• Image domains<br/>• ESLint ignore<br/>• TypeScript config"]
+            TAILWIND["🎨 Tailwind Config<br/>• postcss.config.mjs<br/>• CSS utilities<br/>• Custom themes<br/>• Component styles"]
+            PACKAGE["📦 Dependencies<br/>• package.json<br/>• Next.js 15<br/>• React 19<br/>• Prisma<br/>• NextAuth"]
+        end
+    end
+    
+    %% ========================================
+    %% PROJECT 2: AI TRAINING PIPELINE - DETAILED
+    %% ========================================
+    
+    subgraph "🤖 AI MODEL TRAINING PIPELINE (PyTorch + Transformers)"
+        direction TB
+        
+        %% Data Management
+        subgraph "📊 Dataset Processing & Management"
+            RAW_DATA["📁 Raw Dataset<br/>• Indonesian_Food_Recipes_full.csv<br/>• 1000+ recipes<br/>• Title, Ingredients, Steps<br/>• Indonesian cuisine focus"]
+            DATA_CLEANING["🧹 Data Cleaning<br/>• clean_ingredients()<br/>• Remove measurements<br/>• Extract ingredient names<br/>• Language normalization"]
+            EXAMPLE_GEN["🔄 Training Example Generation<br/>• generate_training_examples()<br/>• 4 types per recipe:<br/>  - Standard recipe request<br/>  - Simple questions<br/>  - Ingredient-based recommendations<br/>  - Ingredient inquiry"]
+            TOKENIZATION["🔤 Text Tokenization<br/>• AutoTokenizer.from_pretrained()<br/>• Chat template application<br/>• Padding & truncation<br/>• Max length: 512 tokens"]
+        end
+        
+        %% Model Configuration
+        subgraph "⚙️ Model Configuration & Setup"
+            BASE_MODEL_CONFIG["🏗️ Base Model Loading<br/>• Model: Qwen/Qwen2-0.5B-Instruct<br/>• AutoModelForCausalLM<br/>• torch_dtype: auto<br/>• device_map: auto"]
+            LORA_CONFIG["🔗 LoRA Configuration<br/>• r=16, lora_alpha=32<br/>• target_modules: q_proj, v_proj, k_proj<br/>• lora_dropout=0.05<br/>• TaskType.CAUSAL_LM"]
+            TRAINING_ARGS["📋 Training Arguments<br/>• epochs=3, batch_size=2<br/>• learning_rate=2e-5<br/>• gradient_accumulation_steps=4<br/>• fp16=True, warmup_steps=100"]
+            SYSTEM_PROMPT["📝 System Prompt<br/>• Indonesian Chef persona<br/>• Traditional cuisine expert<br/>• Recipe instruction specialist<br/>• Ingredient recommendation"]
+        end
+        
+        %% Training Process
+        subgraph "🏃‍♂️ Training Execution & Monitoring"
+            DATA_COLLATOR["📦 Data Collation<br/>• DataCollatorForLanguageModeling<br/>• mlm=False (causal LM)<br/>• Dynamic padding<br/>• Token alignment"]
+            TRAINER_EXEC["🔥 Training Execution<br/>• Hugging Face Trainer<br/>• LoRA parameter updates<br/>• Gradient checkpointing<br/>• Loss calculation & backprop"]
+            MONITORING["📊 Training Monitoring<br/>• Logging steps: 100<br/>• Save steps: 500<br/>• Loss tracking<br/>• Performance metrics"]
+            CHECKPOINTS["💾 Model Checkpoints<br/>• ./IFMF-Qwen2-0.5B-Instruct-full<br/>• Adapter weights<br/>• Training state<br/>• Metadata storage"]
+        end
+        
+        %% Output Management
+        subgraph "📤 Output & Deployment Preparation"
+            MODEL_SAVING["💾 Model Serialization<br/>• trainer.save_model()<br/>• tokenizer.save_pretrained()<br/>• Config file generation<br/>• Adapter weight storage"]
+            METADATA_GEN["📋 Metadata Generation<br/>• training_metadata.json<br/>• Recipe count<br/>• Training examples count<br/>• Model capabilities<br/>• Performance stats"]
+            MODEL_VALIDATION["✅ Model Validation<br/>• Generation testing<br/>• Response quality check<br/>• Indonesian language validation<br/>• Recipe accuracy verification"]
+        end
+    end
+    
+    %% ========================================
+    %% PROJECT 3: AI API SERVER - DETAILED
+    %% ========================================
+    
+    subgraph "🚀 AI API SERVER (FastAPI + PyTorch Inference)"
+        direction TB
+        
+        %% Server Framework
+        subgraph "🌐 FastAPI Server Setup"
+            FASTAPI_APP["⚡ FastAPI Application<br/>• app = FastAPI()<br/>• CORS middleware<br/>• Request/Response models<br/>• Error handling"]
+            CORS_CONFIG["🔄 CORS Configuration<br/>• allow_origins: ['*']<br/>• allow_credentials: True<br/>• allow_methods: ['*']<br/>• Cross-origin support"]
+            SERVER_CONFIG["⚙️ Server Configuration<br/>• Host: 0.0.0.0<br/>• Port: 8000<br/>• Uvicorn ASGI server<br/>• Production ready"]
+        end
+        
+        %% Model Loading & Management
+        subgraph "🧠 AI Model Management"
+            MODEL_LOADING["🔄 Model Initialization<br/>• AutoModelForCausalLM.from_pretrained()<br/>• IFMF-Qwen2.5-1.5B-Instruct<br/>• device_map: cpu<br/>• torch_dtype: float32"]
+            TOKENIZER_LOAD["🔤 Tokenizer Loading<br/>• AutoTokenizer.from_pretrained()<br/>• Chat template support<br/>• Special token handling<br/>• Padding configuration"]
+            MEMORY_MGMT["💾 Memory Management<br/>• low_cpu_mem_usage=True<br/>• Model parameter counting<br/>• Memory optimization<br/>• Resource monitoring"]
+        end
+        
+        %% API Endpoints
+        subgraph "📡 API Endpoint Implementation"
+            GENERATE_EP["✨ /generate Endpoint<br/>• POST method<br/>• Streaming response<br/>• JSON payload validation<br/>• Parameter clamping"]
+            HEALTH_EP["🏥 /health Endpoint<br/>• Server status check<br/>• Model availability<br/>• Resource monitoring<br/>• Uptime tracking"]
+            CANCEL_EP["❌ /cancel Endpoint<br/>• Request cancellation<br/>• Generation stopping<br/>• Resource cleanup<br/>• Error handling"]
+        end
+        
+        %% Text Generation Pipeline
+        subgraph "🔮 Text Generation Pipeline"
+            REQUEST_PROC["📝 Request Processing<br/>• JSON payload parsing<br/>• Parameter validation<br/>• prompt, max_tokens, temperature<br/>• System message injection"]
+            PROMPT_FORMAT["📋 Prompt Formatting<br/>• Indonesian Chef system prompt<br/>• Chat template application<br/>• Message structure<br/>• Context preparation"]
+            GENERATION_ENGINE["⚡ Generation Engine<br/>• model.generate()<br/>• Streaming in chunks<br/>• Token-by-token output<br/>• Temperature sampling"]
+            STREAMING_RESP["📊 Streaming Response<br/>• Server-Sent Events<br/>• Chunk processing<br/>• JSON formatting<br/>• Real-time delivery"]
+        end
+        
+        %% Infrastructure & Deployment
+        subgraph "🏗️ Infrastructure Management"
+            COMPUTE_RESOURCES["💻 Compute Management<br/>• CPU allocation<br/>• Memory monitoring<br/>• Process optimization<br/>• Resource limits"]
+            MODEL_FILES["📁 Model File Management<br/>• Model weights storage<br/>• Config file handling<br/>• Tokenizer assets<br/>• Version control"]
+            ERROR_HANDLING["🚨 Error Handling<br/>• Exception catching<br/>• HTTP status codes<br/>• Error logging<br/>• Graceful degradation"]
+            LOGGING["📝 Logging System<br/>• Request logging<br/>• Performance metrics<br/>• Error tracking<br/>• Debug information"]
+        end
+    end
+    
+    %% ========================================
+    %% DETAILED CONNECTIONS & DATA FLOWS
+    %% ========================================
+    
+    %% Training Pipeline to API Server
+    MODEL_SAVING -.->|"Model Deployment"| MODEL_FILES
+    METADATA_GEN -.->|"Configuration Transfer"| MODEL_LOADING
+    CHECKPOINTS -.->|"Weight Files"| TOKENIZER_LOAD
+    
+    %% Web App to API Server (Detailed)
+    API_CHAT -->|"HTTP POST /generate"| GENERATE_EP
+    UTILS -->|"fetchEventSource()"| STREAMING_RESP
+    STREAMING_RESP -->|"Server-Sent Events"| CHAT
+    
+    %% Internal Web App Flows
+    HOME --> AUTH_PAGES
+    AUTH_PAGES --> API_AUTH
+    API_AUTH --> NEXTAUTH
+    NEXTAUTH --> PRISMA_SCHEMA
+    CHAT --> API_CHAT
+    API_CHAT --> DB_OPERATIONS
+    DB_OPERATIONS --> SQLITE
+    CUSTOM --> SHADCN
+    HOOKS --> UTILS
+    MIDDLEWARE --> API_AUTH
+    
+    %% Internal Training Pipeline Flows
+    RAW_DATA --> DATA_CLEANING
+    DATA_CLEANING --> EXAMPLE_GEN
+    EXAMPLE_GEN --> TOKENIZATION
+    BASE_MODEL_CONFIG --> LORA_CONFIG
+    LORA_CONFIG --> TRAINER_EXEC
+    TRAINING_ARGS --> DATA_COLLATOR
+    DATA_COLLATOR --> TRAINER_EXEC
+    TOKENIZATION --> TRAINER_EXEC
+    TRAINER_EXEC --> MONITORING
+    MONITORING --> CHECKPOINTS
+    CHECKPOINTS --> MODEL_SAVING
+    MODEL_SAVING --> METADATA_GEN
+    
+    %% Internal API Server Flows
+    FASTAPI_APP --> CORS_CONFIG
+    CORS_CONFIG --> GENERATE_EP
+    MODEL_LOADING --> GENERATION_ENGINE
+    TOKENIZER_LOAD --> PROMPT_FORMAT
+    GENERATE_EP --> REQUEST_PROC
+    REQUEST_PROC --> PROMPT_FORMAT
+    PROMPT_FORMAT --> GENERATION_ENGINE
+    GENERATION_ENGINE --> STREAMING_RESP
+    COMPUTE_RESOURCES --> MODEL_LOADING
+    ERROR_HANDLING --> LOGGING
+    
+    %% Styling with More Detailed Colors
+    classDef webAppFrontend fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef webAppBackend fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px,color:#000
+    classDef trainingData fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef trainingModel fill:#f1f8e9,stroke:#689f38,stroke-width:2px,color:#000
+    classDef apiServer fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef apiInference fill:#fdf4e3,stroke:#fb8c00,stroke-width:2px,color:#000
+    classDef infrastructure fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    
+    %% Apply detailed styles
+    class HOME,CHAT,AUTH_PAGES,SHARED,ERRORS,SHADCN,CUSTOM,SIDEBAR webAppFrontend
+    class NEXTAUTH,HOOKS,UTILS,THEME,API_AUTH,API_CHAT,MIDDLEWARE,VALIDATION webAppBackend
+    class PRISMA_SCHEMA,DB_OPERATIONS,SQLITE,NEXTCONFIG,TAILWIND,PACKAGE webAppBackend
+    
+    class RAW_DATA,DATA_CLEANING,EXAMPLE_GEN,TOKENIZATION trainingData
+    class BASE_MODEL_CONFIG,LORA_CONFIG,TRAINING_ARGS,SYSTEM_PROMPT,DATA_COLLATOR,TRAINER_EXEC,MONITORING trainingModel
+    class CHECKPOINTS,MODEL_SAVING,METADATA_GEN,MODEL_VALIDATION trainingModel
+    
+    class FASTAPI_APP,CORS_CONFIG,SERVER_CONFIG,GENERATE_EP,HEALTH_EP,CANCEL_EP apiServer
+    class MODEL_LOADING,TOKENIZER_LOAD,MEMORY_MGMT,REQUEST_PROC,PROMPT_FORMAT,GENERATION_ENGINE,STREAMING_RESP apiInference
+    class COMPUTE_RESOURCES,MODEL_FILES,ERROR_HANDLING,LOGGING infrastructure

@@ -1,0 +1,108 @@
+graph TB
+    %% ========================================
+    %% SIMPLIFIED SERVER ARCHITECTURE
+    %% ========================================
+    
+    %% User Layer
+    USERS["👥 Users<br/>Web Browsers & Mobile"]
+    
+    %% External Services
+    subgraph "🌐 External Services"
+        CDN["🚀 CDN<br/>Static Files & Images"]
+        DNS["🔍 DNS<br/>Domain Routing"]
+    end
+    
+    %% Load Balancer
+    LB["⚖️ Load Balancer<br/>Nginx/HAProxy<br/>SSL & Rate Limiting"]
+    
+    %% Web Application
+    subgraph "🌐 Web Application Tier"
+        WEB["🖥️ Next.js Web Server<br/>Node.js 18+<br/>Port: 3000<br/>SSR & API Routes"]
+    end
+    
+    %% AI API Service
+    subgraph "🤖 AI Service Tier"
+        API["🧠 FastAPI AI Server<br/>Python + PyTorch<br/>Port: 8000<br/>Text Generation"]
+        MODEL["📦 AI Model<br/>Qwen2.5-1.5B<br/>Indonesian Recipes"]
+    end
+    
+    %% Database Layer
+    subgraph "💾 Database Tier"
+        DB["🗄️ Database<br/>PostgreSQL<br/>Users, Chats, Messages"]
+        CACHE["🔴 Cache<br/>Redis<br/>Sessions & Responses"]
+    end
+    
+    %% Storage
+    subgraph "📁 Storage Tier"
+        STATIC["📁 Static Storage<br/>AWS S3<br/>Images & Assets"]
+        MODEL_STORAGE["📦 Model Storage<br/>EFS/NFS<br/>Model Files"]
+    end
+    
+    %% Training (Optional/Separate)
+    subgraph "🎓 Training Environment"
+        TRAIN["🏋️ Training Server<br/>GPU Server<br/>Model Fine-tuning"]
+        DATA["📊 Training Data<br/>Recipe Dataset<br/>CSV Files"]
+    end
+    
+    %% Basic Monitoring
+    MONITOR["📊 Monitoring<br/>Logs & Metrics<br/>Health Checks"]
+    
+    %% ========================================
+    %% CONNECTIONS
+    %% ========================================
+    
+    %% User Flow
+    USERS --> CDN
+    USERS --> DNS
+    USERS --> LB
+    
+    %% Load Balancer Distribution
+    LB --> WEB
+    
+    %% Web to Services
+    WEB --> API
+    WEB --> DB
+    WEB --> CACHE
+    WEB --> STATIC
+    
+    %% AI Service
+    API --> MODEL
+    API --> MODEL_STORAGE
+    API --> CACHE
+    
+    %% Training Flow (Dashed - Separate Process)
+    DATA -.-> TRAIN
+    TRAIN -.->|"Deploy Model"| MODEL_STORAGE
+    
+    %% Monitoring Connections
+    WEB -.-> MONITOR
+    API -.-> MONITOR
+    DB -.-> MONITOR
+    
+    %% CDN Integration
+    CDN --> STATIC
+    
+    %% ========================================
+    %% STYLING
+    %% ========================================
+    
+    classDef userLayer fill:#e3f2fd,stroke:#2196f3,stroke-width:3px,color:#000
+    classDef external fill:#e8f4fd,stroke:#1e88e5,stroke-width:2px,color:#000
+    classDef loadBalancer fill:#fff3e0,stroke:#ff9800,stroke-width:3px,color:#000
+    classDef webTier fill:#e8f5e8,stroke:#4caf50,stroke-width:2px,color:#000
+    classDef aiTier fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px,color:#000
+    classDef dataTier fill:#fce4ec,stroke:#e91e63,stroke-width:2px,color:#000
+    classDef storageTier fill:#fff8e1,stroke:#ffc107,stroke-width:2px,color:#000
+    classDef training fill:#ffebee,stroke:#f44336,stroke-width:2px,color:#000
+    classDef monitoring fill:#e0f2f1,stroke:#00897b,stroke-width:2px,color:#000
+    
+    %% Apply Styles
+    class USERS userLayer
+    class CDN,DNS external
+    class LB loadBalancer
+    class WEB webTier
+    class API,MODEL aiTier
+    class DB,CACHE dataTier
+    class STATIC,MODEL_STORAGE storageTier
+    class TRAIN,DATA training
+    class MONITOR monitoring 

@@ -1,0 +1,52 @@
+graph TB
+    %% Data Input & Processing
+    A["📁 CSV Dataset<br/>Indonesian_Food_Recipes_small.csv"] --> B["🔄 Data Processing<br/>Clean & Generate Examples"]
+    B --> C["🤖 Model Training<br/>Qwen2.5-1.5B + LoRA"]
+    
+    %% AI Model Deployment
+    C --> D["💾 Fine-tuned Model<br/>IFMF-Qwen2.5-1.5B-enhanced"]
+    D --> E["🚀 FastAPI Server<br/>localhost:8000"]
+    E --> F["📡 AI Endpoints<br/>/generate, /health, /cancel"]
+    
+    %% Web Application Stack
+    G["⚛️ Next.js Frontend"] --> H["🌐 API Routes<br/>/api/chat, /api/auth"]
+    H --> I["🗄️ Database<br/>SQLite + Prisma"]
+    
+    %% Authentication & User Management
+    J["🔐 NextAuth.js<br/>Authentication"] --> I
+    J --> G
+    
+    %% UI Components
+    G --> K["🎨 UI Components<br/>Chat Interface, Auth Forms"]
+    
+    %% Real-time Communication
+    K --> L["📡 Streaming Integration<br/>Server-Sent Events"]
+    L --> F
+    
+    %% Data Models
+    I --> M1["👤 Users"]
+    I --> M2["💬 Chats"]
+    I --> M3["📝 Messages"]
+    
+    %% Deployment Infrastructure
+    N["🚀 Deployment"] --> N1["🌐 Next.js App<br/>Frontend + API"]
+    N --> N2["🤖 AI Model Server<br/>FastAPI"]
+    N --> N3["🗄️ Database<br/>SQLite"]
+    
+    %% Main Flow Connections
+    F -.-> L
+    H --> J
+    G --> H
+    
+    %% Styling - Simplified Colors
+    classDef dataLayer fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef aiLayer fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef webLayer fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef authLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef deployLayer fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    
+    class A,B,C,D dataLayer
+    class E,F,L aiLayer
+    class G,H,I,K,M1,M2,M3 webLayer
+    class J authLayer
+    class N,N1,N2,N3 deployLayer
