@@ -1,0 +1,152 @@
+graph TB
+    %% =================================
+    %% PROJECT 1: HOME CHEF AI WEB APP
+    %% =================================
+    
+    subgraph "🌐 HOME CHEF AI WEB APPLICATION"
+        direction TB
+        
+        %% Presentation Layer
+        subgraph "📱 Presentation Layer"
+            UI1["🎨 UI Components<br/>• Chat Interface<br/>• Auth Forms<br/>• Navigation<br/>• Shared Chat View"]
+            PAGES1["📄 Next.js Pages<br/>• Landing Page<br/>• Chat Pages<br/>• Auth Pages<br/>• Error Pages"]
+        end
+        
+        %% Business Logic Layer
+        subgraph "🧠 Business Logic Layer"
+            AUTH1["🔐 Authentication<br/>• NextAuth.js<br/>• Session Management<br/>• OAuth (Google)<br/>• User Registration"]
+            HOOKS1["🪝 React Hooks<br/>• Custom Hooks<br/>• State Management<br/>• Side Effects"]
+            UTILS1["🛠️ Utilities<br/>• Streaming Utils<br/>• Theme Management<br/>• Form Validation"]
+        end
+        
+        %% API Layer
+        subgraph "🔌 API Layer"
+            API1["📡 API Routes<br/>• /api/chat<br/>• /api/auth<br/>• /api/messages<br/>• /api/users"]
+            MIDDLEWARE1["⚙️ Middleware<br/>• Auth Protection<br/>• CORS Handling<br/>• Request Validation"]
+        end
+        
+        %% Data Layer
+        subgraph "💾 Data Layer"
+            DB1["🗄️ SQLite Database<br/>• Users<br/>• Chats<br/>• Messages<br/>• Sessions"]
+            ORM1["🔧 Prisma ORM<br/>• Schema Management<br/>• Query Builder<br/>• Migration System"]
+        end
+    end
+    
+    %% =================================
+    %% PROJECT 2: AI TRAINING PIPELINE
+    %% =================================
+    
+    subgraph "🤖 AI MODEL TRAINING PIPELINE"
+        direction TB
+        
+        %% Data Processing Layer
+        subgraph "📊 Data Processing Layer"
+            DATASET["📁 Dataset<br/>• Indonesian_Food_Recipes_full.csv<br/>• Recipe Collection<br/>• Ingredients & Steps"]
+            PREPROCESSING["🔄 Data Preprocessing<br/>• Recipe Parsing<br/>• Ingredient Cleaning<br/>• Example Generation"]
+        end
+        
+        %% Training Configuration Layer
+        subgraph "⚙️ Training Configuration Layer"
+            CONFIG["🛠️ Training Config<br/>• LoRA Configuration<br/>• Training Arguments<br/>• Model Parameters"]
+            TOKENIZER["🔤 Tokenization<br/>• Text Processing<br/>• Chat Template<br/>• Special Tokens"]
+        end
+        
+        %% Model Training Layer
+        subgraph "🧠 Model Training Layer"
+            BASEMODEL["🏗️ Base Model<br/>• Qwen/Qwen2-0.5B-Instruct<br/>• Pre-trained Weights<br/>• Architecture"]
+            LORA["🔗 LoRA Adapters<br/>• Low-Rank Adaptation<br/>• Parameter Efficient<br/>• Fine-tuning"]
+            TRAINER["🏃‍♂️ Training Process<br/>• Gradient Updates<br/>• Loss Calculation<br/>• Validation"]
+        end
+        
+        %% Output Layer
+        subgraph "💾 Model Output Layer"
+            FINEDTUNED["🎯 Fine-tuned Model<br/>• IFMF-Qwen2-0.5B-Instruct<br/>• Specialized for Indonesian Recipes<br/>• Saved Checkpoints"]
+            METADATA["📋 Training Metadata<br/>• Training Statistics<br/>• Model Configuration<br/>• Performance Metrics"]
+        end
+    end
+    
+    %% =================================
+    %% PROJECT 3: API SERVER
+    %% =================================
+    
+    subgraph "🚀 AI API SERVER"
+        direction TB
+        
+        %% API Gateway Layer
+        subgraph "🌐 API Gateway Layer"
+            FASTAPI["⚡ FastAPI Framework<br/>• RESTful Endpoints<br/>• Request Routing<br/>• Response Handling"]
+            CORS["🔄 CORS Middleware<br/>• Cross-Origin Support<br/>• Security Headers<br/>• Request Validation"]
+        end
+        
+        %% Service Layer
+        subgraph "🔧 Service Layer"
+            ENDPOINTS["📡 API Endpoints<br/>• /generate (Text Generation)<br/>• /health (Health Check)<br/>• /cancel (Request Cancel)"]
+            STREAMING["📊 Streaming Logic<br/>• Server-Sent Events<br/>• Real-time Response<br/>• Chunk Processing"]
+        end
+        
+        %% AI Inference Layer
+        subgraph "🧠 AI Inference Layer"
+            MODELLOAD["🔄 Model Loading<br/>• Model Initialization<br/>• Memory Management<br/>• Device Configuration"]
+            GENERATION["✨ Text Generation<br/>• Prompt Processing<br/>• Token Generation<br/>• Response Streaming"]
+        end
+        
+        %% Infrastructure Layer
+        subgraph "🏗️ Infrastructure Layer"
+            COMPUTE["💻 Compute Resources<br/>• CPU/GPU Allocation<br/>• Memory Management<br/>• Processing Queue"]
+            MODELFILES["📁 Model Files<br/>• IFMF-Qwen2.5-1.5B-Instruct<br/>• Tokenizer Files<br/>• Configuration"]
+        end
+    end
+    
+    %% =================================
+    %% CONNECTIONS BETWEEN PROJECTS
+    %% =================================
+    
+    %% Training to API Server
+    FINEDTUNED -.->|"Model Deployment"| MODELFILES
+    METADATA -.->|"Configuration"| MODELLOAD
+    
+    %% Web App to API Server
+    API1 -->|"HTTP Requests"| FASTAPI
+    STREAMING -->|"SSE Response"| UTILS1
+    
+    %% Internal Web App Connections
+    UI1 --> HOOKS1
+    PAGES1 --> AUTH1
+    HOOKS1 --> API1
+    AUTH1 --> MIDDLEWARE1
+    API1 --> ORM1
+    ORM1 --> DB1
+    
+    %% Internal Training Pipeline Connections
+    DATASET --> PREPROCESSING
+    PREPROCESSING --> TOKENIZER
+    CONFIG --> LORA
+    BASEMODEL --> LORA
+    TOKENIZER --> TRAINER
+    LORA --> TRAINER
+    TRAINER --> FINEDTUNED
+    TRAINER --> METADATA
+    
+    %% Internal API Server Connections
+    FASTAPI --> CORS
+    CORS --> ENDPOINTS
+    ENDPOINTS --> STREAMING
+    STREAMING --> GENERATION
+    MODELLOAD --> GENERATION
+    MODELFILES --> MODELLOAD
+    GENERATION --> COMPUTE
+    
+    %% Styling
+    classDef webApp fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef training fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef apiServer fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
+    classDef connection fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    
+    %% Apply styles to web app components
+    class UI1,PAGES1,AUTH1,HOOKS1,UTILS1,API1,MIDDLEWARE1,DB1,ORM1 webApp
+    
+    %% Apply styles to training components
+    class DATASET,PREPROCESSING,CONFIG,TOKENIZER,BASEMODEL,LORA,TRAINER,FINEDTUNED,METADATA training
+    
+    %% Apply styles to API server components
+    class FASTAPI,CORS,ENDPOINTS,STREAMING,MODELLOAD,GENERATION,COMPUTE,MODELFILES apiServer 

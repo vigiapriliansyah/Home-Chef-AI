@@ -1,0 +1,249 @@
+graph TB
+    %% ========================================
+    %% EXTERNAL LAYER - USER ACCESS & CDN
+    %% ========================================
+    
+    subgraph "🌍 External Access Layer"
+        USERS["👥 End Users<br/>• Web browsers<br/>• Mobile devices<br/>• Global access<br/>• Multiple platforms"]
+        CDN["🚀 Content Delivery Network<br/>• Cloudflare / AWS CloudFront<br/>• Static asset caching<br/>• Global edge locations<br/>• Image optimization<br/>• SSL termination"]
+        DNS["🔍 DNS Management<br/>• Domain routing<br/>• Load balancing DNS<br/>• Failover configuration<br/>• Geographic routing"]
+    end
+    
+    %% ========================================
+    %% LOAD BALANCER & GATEWAY LAYER
+    %% ========================================
+    
+    subgraph "⚖️ Load Balancer & Gateway Layer"
+        LB_MAIN["🔄 Main Load Balancer<br/>• Nginx / HAProxy<br/>• SSL termination<br/>• Rate limiting<br/>• DDoS protection<br/>• Health checks"]
+        API_GATEWAY["🚪 API Gateway<br/>• Kong / AWS API Gateway<br/>• Request routing<br/>• Authentication<br/>• Rate limiting<br/>• API versioning"]
+        WAF["🛡️ Web Application Firewall<br/>• AWS WAF / Cloudflare<br/>• SQL injection protection<br/>• XSS protection<br/>• Bot protection<br/>• Custom rules"]
+    end
+    
+    %% ========================================
+    %% WEB APPLICATION SERVERS
+    %% ========================================
+    
+    subgraph "🌐 Web Application Server Cluster"
+        direction TB
+        
+        subgraph "📱 Next.js Frontend Servers"
+            WEB_SERVER_1["🖥️ Web Server 1<br/>• Next.js 15 SSR<br/>• Node.js 18+<br/>• 4 CPU cores<br/>• 8GB RAM<br/>• Port: 3000"]
+            WEB_SERVER_2["🖥️ Web Server 2<br/>• Next.js 15 SSR<br/>• Node.js 18+<br/>• 4 CPU cores<br/>• 8GB RAM<br/>• Port: 3000"]
+            WEB_SERVER_3["🖥️ Web Server 3<br/>• Next.js 15 SSR<br/>• Node.js 18+<br/>• 4 CPU cores<br/>• 8GB RAM<br/>• Port: 3000"]
+        end
+        
+        WEB_LB["⚖️ Web Load Balancer<br/>• Round-robin<br/>• Health checks<br/>• Session affinity<br/>• Failover"]
+        
+        subgraph "💾 Static Asset Storage"
+            STATIC_STORAGE["📁 Static Files<br/>• AWS S3 / MinIO<br/>• Images, CSS, JS<br/>• Versioned assets<br/>• CDN integration"]
+        end
+    end
+    
+    %% ========================================
+    %% AI API SERVER CLUSTER
+    %% ========================================
+    
+    subgraph "🤖 AI API Server Cluster"
+        direction TB
+        
+        subgraph "🚀 FastAPI Inference Servers"
+            AI_SERVER_1["🧠 AI Server 1<br/>• FastAPI + PyTorch<br/>• Python 3.9+<br/>• 8 CPU cores<br/>• 16GB RAM<br/>• GPU: NVIDIA T4<br/>• Port: 8000"]
+            AI_SERVER_2["🧠 AI Server 2<br/>• FastAPI + PyTorch<br/>• Python 3.9+<br/>• 8 CPU cores<br/>• 16GB RAM<br/>• GPU: NVIDIA T4<br/>• Port: 8000"]
+        end
+        
+        AI_LB["⚖️ AI Load Balancer<br/>• Weighted routing<br/>• GPU utilization aware<br/>• Circuit breaker<br/>• Timeout handling"]
+        
+        subgraph "🔄 Model Management"
+            MODEL_STORAGE["📦 Model Storage<br/>• AWS EFS / NFS<br/>• Shared model files<br/>• Version control<br/>• Hot-swapping"]
+            MODEL_CACHE["💾 Model Cache<br/>• Redis Cluster<br/>• Tokenizer cache<br/>• Response cache<br/>• Session cache"]
+        end
+    end
+    
+    %% ========================================
+    %% DATABASE CLUSTER
+    %% ========================================
+    
+    subgraph "💾 Database Cluster"
+        direction TB
+        
+        subgraph "🗄️ Primary Database Cluster"
+            DB_PRIMARY["🎯 Primary Database<br/>• PostgreSQL 15<br/>• Master node<br/>• Write operations<br/>• 4 CPU cores<br/>• 16GB RAM<br/>• SSD storage"]
+            DB_REPLICA_1["📖 Read Replica 1<br/>• PostgreSQL 15<br/>• Read-only<br/>• Auto-failover<br/>• 4 CPU cores<br/>• 8GB RAM"]
+            DB_REPLICA_2["📖 Read Replica 2<br/>• PostgreSQL 15<br/>• Read-only<br/>• Load distribution<br/>• 4 CPU cores<br/>• 8GB RAM"]
+        end
+        
+        DB_PROXY["🔄 Database Proxy<br/>• PgBouncer / RDS Proxy<br/>• Connection pooling<br/>• Query routing<br/>• Failover management"]
+        
+        subgraph "💾 Cache Layer"
+            REDIS_CLUSTER["🔴 Redis Cluster<br/>• Session storage<br/>• Application cache<br/>• Real-time data<br/>• 3 nodes HA"]
+            MEMCACHED["⚡ Memcached<br/>• Query result cache<br/>• Object caching<br/>• High-speed access"]
+        end
+        
+        subgraph "📊 Backup & Recovery"
+            DB_BACKUP["💾 Database Backup<br/>• Daily automated backups<br/>• Point-in-time recovery<br/>• Cross-region replication<br/>• Encryption at rest"]
+        end
+    end
+    
+    %% ========================================
+    %% TRAINING INFRASTRUCTURE
+    %% ========================================
+    
+    subgraph "🎓 AI Training Infrastructure"
+        direction TB
+        
+        subgraph "🔥 Training Servers"
+            TRAIN_SERVER_1["🏋️ Training Server 1<br/>• High-performance GPU<br/>• NVIDIA A100 / V100<br/>• 32 CPU cores<br/>• 128GB RAM<br/>• NVMe SSD storage"]
+            TRAIN_SERVER_2["🏋️ Training Server 2<br/>• High-performance GPU<br/>• NVIDIA A100 / V100<br/>• 32 CPU cores<br/>• 128GB RAM<br/>• NVMe SSD storage"]
+        end
+        
+        subgraph "📊 Training Data Management"
+            DATA_STORAGE["📁 Training Data Storage<br/>• AWS S3 / HDFS<br/>• Dataset versioning<br/>• Data lineage<br/>• Petabyte scale"]
+            DATA_PROCESSING["🔄 Data Processing<br/>• Apache Spark<br/>• Data preprocessing<br/>• ETL pipelines<br/>• Distributed computing"]
+        end
+        
+        subgraph "🚀 Model Registry & Deployment"
+            MODEL_REGISTRY["📚 Model Registry<br/>• MLflow / Kubeflow<br/>• Model versioning<br/>• Experiment tracking<br/>• A/B testing"]
+            CI_CD_PIPELINE["🔄 CI/CD Pipeline<br/>• GitLab CI / GitHub Actions<br/>• Automated testing<br/>• Model validation<br/>• Deployment automation"]
+        end
+    end
+    
+    %% ========================================
+    %% MONITORING & SECURITY LAYER
+    %% ========================================
+    
+    subgraph "📊 Monitoring & Observability"
+        direction TB
+        
+        subgraph "📈 Application Monitoring"
+            APM["📊 Application Performance<br/>• New Relic / Datadog<br/>• Response times<br/>• Error tracking<br/>• User experience"]
+            LOGS["📝 Centralized Logging<br/>• ELK Stack / Splunk<br/>• Log aggregation<br/>• Search & analysis<br/>• Alerting"]
+        end
+        
+        subgraph "🖥️ Infrastructure Monitoring"
+            METRICS["📊 Metrics Collection<br/>• Prometheus + Grafana<br/>• System metrics<br/>• Custom metrics<br/>• Real-time dashboards"]
+            ALERTS["🚨 Alerting System<br/>• PagerDuty / Slack<br/>• Threshold alerts<br/>• Anomaly detection<br/>• Escalation policies"]
+        end
+        
+        subgraph "🛡️ Security Monitoring"
+            SIEM["🔍 Security Information<br/>• Splunk / AWS Security Hub<br/>• Threat detection<br/>• Compliance monitoring<br/>• Incident response"]
+            VULNERABILITY["🔒 Vulnerability Management<br/>• Regular security scans<br/>• Dependency monitoring<br/>• Penetration testing<br/>• Security patches"]
+        end
+    end
+    
+    %% ========================================
+    %% DEVOPS & ORCHESTRATION
+    %% ========================================
+    
+    subgraph "🚢 Container Orchestration & DevOps"
+        direction TB
+        
+        subgraph "☸️ Kubernetes Cluster"
+            K8S_MASTER["⚙️ Kubernetes Master<br/>• Control plane<br/>• API server<br/>• Scheduler<br/>• etcd cluster"]
+            K8S_WORKERS["🔧 Worker Nodes<br/>• Container runtime<br/>• Kubelet<br/>• kube-proxy<br/>• Auto-scaling"]
+        end
+        
+        subgraph "📦 Container Management"
+            DOCKER_REGISTRY["📦 Container Registry<br/>• Docker Hub / ECR<br/>• Image versioning<br/>• Security scanning<br/>• Automated builds"]
+            HELM["📊 Helm Charts<br/>• Package management<br/>• Configuration templates<br/>• Release management<br/>• Rollback capability"]
+        end
+        
+        subgraph "🔄 GitOps & Automation"
+            GITOPS["🔄 GitOps Workflow<br/>• ArgoCD / Flux<br/>• Declarative config<br/>• Continuous deployment<br/>• Configuration drift detection"]
+            TERRAFORM["🏗️ Infrastructure as Code<br/>• Terraform / CloudFormation<br/>• Resource provisioning<br/>• State management<br/>• Multi-cloud support"]
+        end
+    end
+    
+    %% ========================================
+    %% CONNECTIONS & DATA FLOWS
+    %% ========================================
+    
+    %% External to Load Balancer
+    USERS --> CDN
+    USERS --> DNS
+    CDN --> LB_MAIN
+    DNS --> LB_MAIN
+    
+    %% Load Balancer to Services
+    LB_MAIN --> WAF
+    WAF --> API_GATEWAY
+    API_GATEWAY --> WEB_LB
+    API_GATEWAY --> AI_LB
+    
+    %% Web Application Flow
+    WEB_LB --> WEB_SERVER_1
+    WEB_LB --> WEB_SERVER_2
+    WEB_LB --> WEB_SERVER_3
+    WEB_SERVER_1 --> STATIC_STORAGE
+    WEB_SERVER_2 --> STATIC_STORAGE
+    WEB_SERVER_3 --> STATIC_STORAGE
+    
+    %% AI API Flow
+    AI_LB --> AI_SERVER_1
+    AI_LB --> AI_SERVER_2
+    AI_SERVER_1 --> MODEL_STORAGE
+    AI_SERVER_2 --> MODEL_STORAGE
+    AI_SERVER_1 --> MODEL_CACHE
+    AI_SERVER_2 --> MODEL_CACHE
+    
+    %% Database Connections
+    WEB_SERVER_1 --> DB_PROXY
+    WEB_SERVER_2 --> DB_PROXY
+    WEB_SERVER_3 --> DB_PROXY
+    DB_PROXY --> DB_PRIMARY
+    DB_PROXY --> DB_REPLICA_1
+    DB_PROXY --> DB_REPLICA_2
+    WEB_SERVER_1 --> REDIS_CLUSTER
+    WEB_SERVER_2 --> REDIS_CLUSTER
+    WEB_SERVER_3 --> REDIS_CLUSTER
+    
+    %% Training to Production
+    MODEL_REGISTRY -.->|"Model Deployment"| MODEL_STORAGE
+    CI_CD_PIPELINE -.->|"Automated Deployment"| K8S_WORKERS
+    DATA_STORAGE --> DATA_PROCESSING
+    DATA_PROCESSING --> TRAIN_SERVER_1
+    DATA_PROCESSING --> TRAIN_SERVER_2
+    TRAIN_SERVER_1 --> MODEL_REGISTRY
+    TRAIN_SERVER_2 --> MODEL_REGISTRY
+    
+    %% Monitoring Connections
+    WEB_SERVER_1 -.-> APM
+    WEB_SERVER_2 -.-> APM
+    WEB_SERVER_3 -.-> APM
+    AI_SERVER_1 -.-> APM
+    AI_SERVER_2 -.-> APM
+    DB_PRIMARY -.-> METRICS
+    DB_REPLICA_1 -.-> METRICS
+    DB_REPLICA_2 -.-> METRICS
+    
+    %% Container Orchestration
+    K8S_MASTER --> K8S_WORKERS
+    DOCKER_REGISTRY --> K8S_WORKERS
+    HELM --> K8S_WORKERS
+    GITOPS --> K8S_MASTER
+    TERRAFORM -.-> K8S_MASTER
+    
+    %% Backup Connections
+    DB_PRIMARY --> DB_BACKUP
+    DB_REPLICA_1 --> DB_BACKUP
+    
+    %% Styling
+    classDef external fill:#e8f4fd,stroke:#1e88e5,stroke-width:3px,color:#000
+    classDef loadBalancer fill:#fff3e0,stroke:#ff9800,stroke-width:3px,color:#000
+    classDef webServer fill:#e3f2fd,stroke:#2196f3,stroke-width:2px,color:#000
+    classDef aiServer fill:#e8f5e8,stroke:#4caf50,stroke-width:2px,color:#000
+    classDef database fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px,color:#000
+    classDef training fill:#fff8e1,stroke:#ffc107,stroke-width:2px,color:#000
+    classDef monitoring fill:#fce4ec,stroke:#e91e63,stroke-width:2px,color:#000
+    classDef devops fill:#e0f2f1,stroke:#00897b,stroke-width:2px,color:#000
+    classDef security fill:#ffebee,stroke:#f44336,stroke-width:2px,color:#000
+    
+    %% Apply styles
+    class USERS,CDN,DNS external
+    class LB_MAIN,API_GATEWAY,WAF,WEB_LB,AI_LB loadBalancer
+    class WEB_SERVER_1,WEB_SERVER_2,WEB_SERVER_3,STATIC_STORAGE webServer
+    class AI_SERVER_1,AI_SERVER_2,MODEL_STORAGE,MODEL_CACHE aiServer
+    class DB_PRIMARY,DB_REPLICA_1,DB_REPLICA_2,DB_PROXY,REDIS_CLUSTER,MEMCACHED,DB_BACKUP database
+    class TRAIN_SERVER_1,TRAIN_SERVER_2,DATA_STORAGE,DATA_PROCESSING,MODEL_REGISTRY,CI_CD_PIPELINE training
+    class APM,LOGS,METRICS,ALERTS monitoring
+    class SIEM,VULNERABILITY security
+    class K8S_MASTER,K8S_WORKERS,DOCKER_REGISTRY,HELM,GITOPS,TERRAFORM devops
