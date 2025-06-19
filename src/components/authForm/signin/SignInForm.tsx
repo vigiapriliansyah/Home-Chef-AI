@@ -63,7 +63,7 @@ export default function SignInForm() {
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="email"
-            placeholder="Email or Username *"
+            placeholder="Email *"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
