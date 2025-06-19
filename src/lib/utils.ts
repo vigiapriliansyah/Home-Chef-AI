@@ -12,6 +12,7 @@ export function cn(...inputs: ClassValue[]) {
  * @param onChunk Callback function to handle each chunk of text as it arrives
  * @param onDone Callback function when the stream is complete
  * @param onError Callback function to handle errors
+ * @param signal AbortSignal for cancelling the request
  */
 export async function fetchEventSource(
   url: string,
@@ -19,12 +20,14 @@ export async function fetchEventSource(
     body,
     onChunk,
     onDone,
-    onError
+    onError,
+    signal
   }: {
     body: any,
     onChunk: (chunk: string) => void,
     onDone?: () => void,
-    onError?: (error: Error) => void
+    onError?: (error: Error) => void,
+    signal?: AbortSignal
   }
 ) {
   try {
@@ -34,6 +37,7 @@ export async function fetchEventSource(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
+      signal,
     });
 
     if (!response.ok) {
@@ -56,7 +60,7 @@ export async function fetchEventSource(
       if (done) {
         if (buffer.length > 0) {
           // Process any remaining content in the buffer
-          processChunk(buffer, onChunk);
+          processSSEChunks(buffer, onChunk);
         }
         onDone?.();
         break;
@@ -66,29 +70,9 @@ export async function fetchEventSource(
       const chunk = decoder.decode(value, { stream: true });
       buffer += chunk;
       
-      // Check for SSE format or raw text
-      if (buffer.includes('data:')) {
-        // Process as SSE format (data: {...})
-        const events = buffer.split('\n\n');
-        buffer = events.pop() || '';
-        
-        for (const event of events) {
-          processEvent(event, onChunk);
-        }
-      } else if (buffer.includes('\n')) {
-        // Process as newline-delimited chunks
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
-        for (const line of lines) {
-          if (line.trim()) {
-            processChunk(line, onChunk);
-          }
-        }
-      } else {
-        // For small chunks with no delimiter, just accumulate in buffer
-        // Will be processed when a delimiter is found or at the end
-      }
+      // Process SSE chunks (data: ...\n\n format)
+      const processed = processSSEChunks(buffer, onChunk);
+      buffer = processed.remaining;
     }
   } catch (error) {
     console.error('Error in fetchEventSource:', error);
@@ -96,12 +80,26 @@ export async function fetchEventSource(
   }
 }
 
-function processEvent(event: string, onChunk: (chunk: string) => void) {
+function processSSEChunks(buffer: string, onChunk: (chunk: string) => void): { remaining: string } {
+  // Split by double newlines to get complete SSE events
+  const events = buffer.split('\n\n');
+  const remaining = events.pop() || ''; // Keep incomplete event in buffer
+  
+  for (const event of events) {
+    if (event.trim()) {
+      processSSEEvent(event, onChunk);
+    }
+  }
+  
+  return { remaining };
+}
+
+function processSSEEvent(event: string, onChunk: (chunk: string) => void) {
   // Handle SSE format (data: ...)
   const lines = event.split('\n');
   for (const line of lines) {
     if (line.startsWith('data:')) {
-      const data = line.substring(6).trim();
+      const data = line.substring(5).trim(); // Remove 'data: ' prefix
       if (data && data !== '[DONE]') {
         processChunk(data, onChunk);
       }
@@ -111,18 +109,11 @@ function processEvent(event: string, onChunk: (chunk: string) => void) {
 
 function processChunk(data: string, onChunk: (chunk: string) => void) {
   try {
-    // Try to parse as JSON
+    // Try to parse as JSON (for serve-v2.py format)
     try {
       const jsonData = JSON.parse(data);
-      // Look for text content in various common formats
-      const textContent = 
-        jsonData.text || 
-        jsonData.content || 
-        jsonData.message || 
-        (jsonData.choices ? 
-          (jsonData.choices[0]?.text || jsonData.choices[0]?.message?.content) : 
-          undefined) ||
-        jsonData;
+      // Look for text content in JSON format
+      const textContent = jsonData.text || jsonData.content || jsonData.message || jsonData.response;
       
       // If we found a string, use it
       if (typeof textContent === 'string') {
@@ -132,12 +123,18 @@ function processChunk(data: string, onChunk: (chunk: string) => void) {
         onChunk(JSON.stringify(textContent));
       }
     } catch (e) {
-      // If it's not valid JSON, just use the raw text
-      onChunk(data);
+      // If it's not valid JSON, just use the raw text (for serve-v2-improved.py format)
+      const cleanData = data.trim();
+      if (cleanData) {
+        onChunk(cleanData);
+      }
     }
   } catch (e) {
     console.error('Error processing chunk:', e);
     // Even on error, try to provide some data
-    onChunk(data);
+    const cleanData = data.trim();
+    if (cleanData) {
+      onChunk(cleanData);
+    }
   }
 }

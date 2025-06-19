@@ -273,18 +273,15 @@ const ChatPage = () => {
 
       try {
         await fetchEventSource("http://localhost:8000/generate", {
-          // Ensure URL is correct
-          signal: controller.signal,
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: { prompt: trimmedMessage, max_tokens: 512, temperature: 0.7 },
+          signal: controller.signal,
           onChunk: (chunk) => {
             if (chunk) {
               accumulatedText += chunk;
               setMessages((prevMessages) =>
                 prevMessages.map((msg) =>
                   msg.id === tempMessageId
-                    ? { ...msg, content: accumulatedText }
+                    ? { ...msg, content: accumulatedText.replace("--", "\n") }
                     : msg
                 )
               );
